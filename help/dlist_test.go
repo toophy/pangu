@@ -26,12 +26,12 @@ func (this *EvtPool) Post(d IEvent) bool {
 		return false
 	}
 
-	n.Pre = this.header.Pre
+	old_pre := this.header.Pre
 
-	this.header.Pre.Next = n
 	this.header.Pre = n
-
-	n.Next = &this.header
+	n.Next = this.header
+	n.Pre = old_pre
+	old_pre.Next = n
 
 	return true
 }

@@ -20,10 +20,12 @@ func (this *EventObj) AddEvent(e IEvent) bool {
 		return false
 	}
 
-	n.Pre = this.NodeObj.Pre
-	this.NodeObj.Pre.Next = n
+	old_pre := this.NodeObj.Pre
+
 	this.NodeObj.Pre = n
 	n.Next = &this.NodeObj
+	n.Pre = old_pre
+	old_pre.Next = n
 
 	return true
 }

@@ -251,10 +251,12 @@ func (this *Thread) PostEvent(a help.IEvent) bool {
 		return false
 	}
 
-	n.Pre = header.Pre
-	header.Pre.Next = n
+	old_pre := header.Pre
+
 	header.Pre = n
 	n.Next = header
+	n.Pre = old_pre
+	old_pre.Next = n
 
 	if check_name {
 		this.evt_names[a.GetName()] = a
@@ -279,10 +281,12 @@ func (this *Thread) PostThreadMsg(tid int32, a help.IEvent) bool {
 			return false
 		}
 
-		n.Pre = header.Pre
-		header.Pre.Next = n
+		old_pre := header.Pre
+
 		header.Pre = n
 		n.Next = header
+		n.Pre = old_pre
+		old_pre.Next = n
 
 		return true
 	}
