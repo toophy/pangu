@@ -318,8 +318,6 @@ func (this *Thread) runThreadMsg() {
 			break
 		}
 
-		fmt.Println("wokao")
-
 		// 执行事件, 删除这个事件
 		e := n.Data.(help.IEvent)
 		e.Exec(this.self)

@@ -38,11 +38,13 @@ func (this *ThreadMsgPool) PostMsg(tid int32, e *help.DListNode) bool {
 
 		e.Init(nil)
 
-		header.Pre.Next = e_pre
-		e_pre.Pre = header.Pre
+		old_pre := header.Pre
 
-		header.Pre = e_next
-		e_next.Next = header
+		header.Pre = e_pre
+		e_pre.Next = header
+
+		e_next.Pre = old_pre
+		old_pre.Next = e_next
 
 		return true
 	}
@@ -63,11 +65,13 @@ func (this *ThreadMsgPool) GetMsg(tid int32, e *help.DListNode) bool {
 
 			header.Init(nil)
 
-			e.Pre.Next = header_pre
-			header_pre.Pre = e.Pre
+			old_pre := e.Pre
 
-			e.Pre = header_next
-			header_next.Next = e
+			e.Pre = header_pre
+			header_pre.Next = e
+
+			header_next.Pre = old_pre
+			old_pre.Next = header_next
 		}
 
 		return true
