@@ -5,7 +5,7 @@ import (
 )
 
 // 注册本包所有Lua接口结构
-func RegLua_all(L *lua.LState) error {
+func RegLua_all_thread_screen(L *lua.LState) error {
 
 	type regLuaFunc func(string, *lua.LState) error
 

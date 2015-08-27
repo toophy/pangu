@@ -6,7 +6,7 @@ import (
 )
 
 // 场景容器
-type ScreenMap map[int32]*screen.Screen
+type ScreenMap map[int32]*Screen
 
 // 场景线程
 type ScreenThread struct {
@@ -43,7 +43,7 @@ func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time i
 
 // 增加场景
 func (this *ScreenThread) Add_screen(name string, oid int32) bool {
-	a := new(screen.Screen)
+	a := new(Screen)
 	a.Load(name, this.lastScreenId, 1, this)
 	this.screens[this.lastScreenId] = a
 
@@ -99,8 +99,8 @@ func (this *ScreenThread) reloadLuaState() error {
 		return errors.New("[E] 场景线程初始化Lua失败")
 	}
 
-	RegLua_all(this.luaState)
-	screen.RegLua_all(this.luaState)
+	RegLua_all_thread_screen(this.luaState)
+	RegLua_all_screen(this.luaState)
 
 	// 加载所有 screens 文件夹里面的 *.lua 文件
 	this.luaState.RequireDir("data/screens")

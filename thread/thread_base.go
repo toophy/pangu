@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/toophy/pangu/help"
-	"strings"
 	"time"
 )
 
@@ -47,11 +46,9 @@ type IThread interface {
 	on_run()                                                 // -- 只允许thread调用 : 线程运行部分
 	on_end()                                                 // -- 只允许thread调用 : 线程结束回调
 
-	PostEvent(a help.IEvent) bool     // 投递定时器事件
-	GetEvent(name string) help.IEvent // 通过别名获取事件
-	RemoveEvent(e help.IEvent) bool   // 删除事件, 只能操作本线程事件
-	PopTimer(e help.IEvent)           // 从线程事件中弹出指定事件, 只能操作本线程事件
-	PopObj(e help.IEvent)             // 从关联对象中弹出指定事件, 只能操作本线程事件
+	PostEvent(a help.IEvent, b help.IEventObj) bool // 投递定时器事件
+	GetEvent(name string) help.IEvent               // 通过别名获取事件
+	RemoveEvent(e help.IEvent)                      // 删除事件, 只能操作本线程事件
 
 	LogDebug(f string, v ...interface{}) // 线程日志 : 调试[D]级别日志
 	LogInfo(f string, v ...interface{})  // 线程日志 : 信息[I]级别日志
@@ -73,7 +70,7 @@ type Thread struct {
 	first_run        bool                       // 线程首次运行
 	evt_lay1         []*help.DListNode          // 第一层事件池
 	evt_lay2         map[uint64]*help.DListNode // 第二层事件池
-	evt_names        map[string]*help.IEvent    // 别名
+	evt_names        map[string]help.IEvent     // 别名
 	evt_lay1Size     uint64                     // 第一层池容量
 	evt_lay1Cursor   uint64                     // 第一层游标
 	evt_lastRunCount uint64                     // 最近一次运行次数
@@ -118,7 +115,7 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 
 	this.evt_lay1 = make([]*help.DListNode, this.evt_lay1Size)
 	this.evt_lay2 = make(map[uint64]*help.DListNode, 0)
-	this.evt_names = make(map[string]*help.IEvent, 0)
+	this.evt_names = make(map[string]help.IEvent, 0)
 
 	for i := uint64(0); i < this.evt_lay1Size; i++ {
 		this.evt_lay1[i] = new(help.DListNode)
@@ -207,27 +204,8 @@ func (this *Thread) pre_close_thread() {
 	this.pre_stop = true
 }
 
-/*func (this *EvtPool) Post(d IEvent) bool {
-
-	n := &DListNode{}
-	n.Init(d)
-
-	if !d.AddNode(n) {
-		return false
-	}
-
-	n.Pre = this.header.Pre
-
-	this.header.Pre.Next = n
-	this.header.Pre = n
-
-	n.Next = &this.header
-
-	return true
-}*/
-
 // 投递定时器事件
-func (this *Thread) PostEvent(a help.IEvent) bool {
+func (this *Thread) PostEvent(a help.IEvent, b help.IEventObj) bool {
 	check_name := len(a.GetName()) > 0
 	if check_name {
 		if _, ok := this.evt_names[a.GetName()]; ok {
@@ -278,6 +256,10 @@ func (this *Thread) PostEvent(a help.IEvent) bool {
 	header.Pre = n
 	n.Next = header
 
+	if b != nil {
+		b.AddEvent(n)
+	}
+
 	if check_name {
 		this.evt_names[a.GetName()] = a
 	}
@@ -313,51 +295,37 @@ func (this *Thread) PostThreadMsg(tid int32, a help.IEvent) bool {
 }
 
 // 通过别名获取事件
-func (this *Thread) GetEvent(name string) *help.IEvent {
+func (this *Thread) GetEvent(name string) help.IEvent {
 	if _, ok := this.evt_names[name]; ok {
 		return this.evt_names[name]
 	}
 	return nil
 }
 
-// 从线程事件中弹出指定事件, 只能操作本线程事件
-func (this *Thread) PopTimer(e help.IEvent) {
-	if !e.IsHeader() {
-		e.GetPreTimer().SetNextTimer(e.GetNextTimer())
-		e.GetNextTimer().SetPreTimer(e.GetPreTimer())
-		e.SetNextTimer(nil)
-		e.SetPreTimer(nil)
-	}
-}
-
-// 从关联对象中弹出指定事件, 只能操作本线程事件
-func (this *Thread) PopObj(e help.IEvent) {
-	if !e.IsHeader() {
-		e.GetPreObj().SetNextObj(e.GetNextObj())
-		e.GetNextObj().SetPreObj(e.GetPreObj())
-		e.SetNextObj(nil)
-		e.SetPreObj(nil)
-	}
+func (this *Thread) RemoveEvent(e help.IEvent) {
+	delete(this.evt_names, e.GetName())
+	e.Destroy()
 }
 
 // 接收并处理线程间消息
 func (this *Thread) runThreadMsg() {
 
-	header := event.EventHeader{}
-	header.Init("", 100)
+	header := help.DListNode{}
+	header.Init(nil)
 
 	G_thread_msg_pool.GetMsg(this.Get_thread_id(), &header)
 
 	for {
 		// 每次得到链表第一个事件(非)
-		evt := header.GetNextTimer()
-		if evt.IsHeader() {
+		n := header.Next
+		if n.IsEmpty() {
 			break
 		}
 
 		// 执行事件, 删除这个事件
-		evt.Exec(this.self)
-		this.PopTimer(evt)
+		e := n.Data.(help.IEvent)
+		e.Exec(this.self)
+		e.Destroy()
 	}
 }
 
@@ -369,7 +337,6 @@ func (this *Thread) sendThreadMsg() {
 		evt := &Event_thread_log{}
 		evt.Init("", 100)
 		evt.Data = this.log_Buffer
-		fmt.Print(this.log_Buffer.String())
 		this.PostThreadMsg(Tid_log, evt)
 		this.log_Buffer.Reset()
 	}
@@ -409,20 +376,22 @@ func (this *Thread) runEvents() {
 }
 
 // 运行一条定时器事件链表, 每次都执行第一个事件, 直到链表为空
-func (this *Thread) runExec(header help.IEvent) {
+func (this *Thread) runExec(header *help.DListNode) {
 	for {
 		// 每次得到链表第一个事件(非)
-		evt := header.GetNextTimer()
-		if evt.IsHeader() {
+		n := header.Next
+		if n.IsEmpty() {
 			break
 		}
 
+		d := n.Data.(help.IEvent)
+
 		// 执行事件, 返回true, 删除这个事件, 返回false表示用户自己处理
-		if evt.Exec(this.self) {
-			this.RemoveEvent(evt)
-		} else if header.GetNextTimer() == evt {
+		if d.Exec(this.self) {
+			this.RemoveEvent(d)
+		} else if header.Next == n {
 			// 防止使用者没有删除使用过的事件, 造成死循环, 该事件, 用户要么重新投递到其他链表, 要么删除
-			this.RemoveEvent(evt)
+			this.RemoveEvent(d)
 		}
 	}
 }
@@ -441,21 +410,6 @@ func (this *Thread) PrintAll() {
 	for k, v := range this.evt_names {
 		fmt.Println(k, v)
 	}
-}
-
-// // Debug logs a message at debug level.
-// func Debug(v ...interface{}) {
-// 	BeeLogger.Debug(generateFmtStr(len(v)), v...)
-// }
-
-// // Trace logs a message at trace level.
-// // compatibility alias for Warning()
-// func Trace(v ...interface{}) {
-// 	BeeLogger.Trace(generateFmtStr(len(v)), v...)
-// }
-
-func generateFmtStr(n int) string {
-	return strings.Repeat("%v ", n)
 }
 
 // 线程日志 : 调试[D]级别日志

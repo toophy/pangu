@@ -8,7 +8,7 @@ import (
 )
 
 type Screen struct {
-	event.EventObj
+	help.EventObj
 	Name    string
 	Id      int32
 	Oid     int32
@@ -46,7 +46,7 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 	evt := &Event_heart_beat{}
 	evt.Init("", 3000)
 	evt.Screen_ = this
-	this.thread.PostEvent(evt)
+	this.thread.PostEvent(evt, this)
 
 	return true
 }
@@ -57,7 +57,7 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 // 没有场景的精灵怎么进行操作呢?
 func (this *Screen) Unload() {
 	fmt.Printf("场景%s卸载成功\n", this.Name)
-	this.thread.RemoveEventList(this.GetEventHeader())
+	//this.thread.RemoveEventList(this.GetEventHeader())
 	this.thread = nil
 	this.luaData = nil
 }
