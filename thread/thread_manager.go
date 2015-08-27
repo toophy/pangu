@@ -80,7 +80,7 @@ func (this *Master) Wait_thread_over() {
 			evt := &Event_close_thread{}
 			evt.Init("", 2000)
 			evt.Master = this
-			this.PostEvent(evt, nil)
+			this.PostEvent(evt)
 		}
 
 		this.threadLock.Unlock()

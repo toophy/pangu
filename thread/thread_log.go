@@ -40,7 +40,7 @@ func (this *LogThread) on_first_run() {
 	// 处理文件
 	evt := &Event_flush_log{}
 	evt.Init("", 300)
-	this.PostEvent(evt, nil)
+	this.PostEvent(evt)
 }
 
 // 响应线程退出

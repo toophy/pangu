@@ -28,7 +28,7 @@ func (this *Event_flush_log) Exec(home interface{}) bool {
 
 	evt := &Event_flush_log{}
 	evt.Init("", 300)
-	home.(*LogThread).PostEvent(evt, nil)
+	home.(*LogThread).PostEvent(evt)
 
 	return true
 }

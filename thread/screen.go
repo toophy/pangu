@@ -46,7 +46,7 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 	evt := &Event_heart_beat{}
 	evt.Init("", 3000)
 	evt.Screen_ = this
-	this.thread.PostEvent(evt, this)
+	this.thread.PostEvent(evt)
 
 	return true
 }

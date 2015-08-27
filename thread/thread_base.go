@@ -46,9 +46,9 @@ type IThread interface {
 	on_run()                                                 // -- 只允许thread调用 : 线程运行部分
 	on_end()                                                 // -- 只允许thread调用 : 线程结束回调
 
-	PostEvent(a help.IEvent, b help.IEventObj) bool // 投递定时器事件
-	GetEvent(name string) help.IEvent               // 通过别名获取事件
-	RemoveEvent(e help.IEvent)                      // 删除事件, 只能操作本线程事件
+	PostEvent(a help.IEvent) bool     // 投递定时器事件
+	GetEvent(name string) help.IEvent // 通过别名获取事件
+	RemoveEvent(e help.IEvent)        // 删除事件, 只能操作本线程事件
 
 	LogDebug(f string, v ...interface{}) // 线程日志 : 调试[D]级别日志
 	LogInfo(f string, v ...interface{})  // 线程日志 : 信息[I]级别日志
@@ -205,7 +205,7 @@ func (this *Thread) pre_close_thread() {
 }
 
 // 投递定时器事件
-func (this *Thread) PostEvent(a help.IEvent, b help.IEventObj) bool {
+func (this *Thread) PostEvent(a help.IEvent) bool {
 	check_name := len(a.GetName()) > 0
 	if check_name {
 		if _, ok := this.evt_names[a.GetName()]; ok {
@@ -255,10 +255,6 @@ func (this *Thread) PostEvent(a help.IEvent, b help.IEventObj) bool {
 	header.Pre.Next = n
 	header.Pre = n
 	n.Next = header
-
-	if b != nil {
-		b.AddEvent(n)
-	}
 
 	if check_name {
 		this.evt_names[a.GetName()] = a
@@ -321,6 +317,8 @@ func (this *Thread) runThreadMsg() {
 		if n.IsEmpty() {
 			break
 		}
+
+		fmt.Println("wokao")
 
 		// 执行事件, 删除这个事件
 		e := n.Data.(help.IEvent)
