@@ -341,7 +341,6 @@ func (this *Thread) sendThreadMsg() {
 
 	for i := int32(Tid_master); i < Tid_last; i++ {
 		if !this.evt_threadMsg[i].IsEmpty() {
-
 			G_thread_msg_pool.PostMsg(i, this.evt_threadMsg[i])
 		}
 	}
