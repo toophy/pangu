@@ -1,13 +1,9 @@
-package base
+package help
 
 import (
 	"fmt"
 	"testing"
 )
-
-type IEvent interface {
-	Exec(home interface{}) bool
-}
 
 type EvtPool struct {
 	header DListNode
@@ -21,9 +17,14 @@ func (this *EvtPool) Eat(name string) {
 	fmt.Printf("吃%s\n", name)
 }
 
-func (this *EvtPool) Post(d interface{}) {
+func (this *EvtPool) Post(d IEvent) bool {
+
 	n := &DListNode{}
 	n.Init(d)
+
+	if !d.AddNode(n) {
+		return false
+	}
 
 	n.Pre = this.header.Pre
 
@@ -31,6 +32,8 @@ func (this *EvtPool) Post(d interface{}) {
 	this.header.Pre = n
 
 	n.Next = &this.header
+
+	return true
 }
 
 func (this *EvtPool) Run() {
@@ -43,21 +46,17 @@ func (this *EvtPool) Run() {
 
 		n.Data.(IEvent).Exec(this)
 
-		n.Pre.Next = n.Next
-		n.Next.Pre = n.Pre
-		n.Data = nil
+		n.Data.(IEvent).Destroy()
 	}
-
 }
 
 type Evt_eat struct {
+	Evt_base
 	FoodName string
 }
 
 func (this *Evt_eat) Exec(home interface{}) bool {
-
 	home.(*EvtPool).Eat(this.FoodName)
-
 	return true
 }
 

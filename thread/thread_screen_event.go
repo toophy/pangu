@@ -1,0 +1,33 @@
+package thread
+
+import (
+	"github.com/toophy/pangu/help"
+)
+
+// 事件 : 场景增/删
+type Event_open_screen struct {
+	help.Evt_base
+	Screen_oid_    int32
+	Screen_name_   string
+	Screen_thread_ *ScreenThread
+	Open           bool
+}
+
+// 事件执行
+func (this *Event_open_screen) Exec(home interface{}) bool {
+	if this.Open {
+		if this.Screen_thread_.Add_screen(this.Screen_name_, this.Screen_oid_) {
+			this.Screen_thread_.LogError("打开场景成功")
+			return true
+		}
+		this.Screen_thread_.LogError("打开场景失败")
+		return true
+	}
+
+	if this.Screen_thread_.Del_screen(this.Screen_oid_) {
+		this.Screen_thread_.LogError("关闭场景成功")
+		return true
+	}
+	this.Screen_thread_.LogError("关闭场景失败")
+	return true
+}

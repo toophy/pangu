@@ -1,6 +1,4 @@
-package base
-
-import ()
+package help
 
 type DListNode struct {
 	Pre  *DListNode  // 前一个
@@ -14,12 +12,18 @@ func (this *DListNode) Init(d interface{}) {
 	this.Data = d
 }
 
-func (this *DListNode) Clear() {
+func (this *DListNode) Pop() {
+	if this.Pre != nil {
+		this.Pre.Next = this.Next
+	}
+	if this.Next != nil {
+		this.Next.Pre = this.Pre
+	}
+
 	this.Pre = nil
 	this.Next = nil
-	this.Data = nil
 }
 
 func (this *DListNode) IsEmpty() bool {
-	return this.Pre == this && this.Next == this
+	return (this.Pre == this.Next) && (this.Pre == nil || this.Pre == this)
 }
