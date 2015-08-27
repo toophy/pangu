@@ -73,7 +73,7 @@ type Thread struct {
 	first_run        bool                       // 线程首次运行
 	evt_lay1         []*help.DListNode          // 第一层事件池
 	evt_lay2         map[uint64]*help.DListNode // 第二层事件池
-	evt_names        map[string]*help.DListNode // 别名
+	evt_names        map[string]*help.IEvent    // 别名
 	evt_lay1Size     uint64                     // 第一层池容量
 	evt_lay1Cursor   uint64                     // 第一层游标
 	evt_lastRunCount uint64                     // 最近一次运行次数
@@ -118,7 +118,7 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 
 	this.evt_lay1 = make([]*help.DListNode, this.evt_lay1Size)
 	this.evt_lay2 = make(map[uint64]*help.DListNode, 0)
-	this.evt_names = make(map[string]*help.DListNode, 0)
+	this.evt_names = make(map[string]*help.IEvent, 0)
 
 	for i := uint64(0); i < this.evt_lay1Size; i++ {
 		this.evt_lay1[i] = new(help.DListNode)
@@ -256,8 +256,8 @@ func (this *Thread) PostEvent(a help.IEvent) bool {
 		header = this.evt_lay1[pos]
 	} else {
 		if _, ok := this.evt_lay2[pos]; !ok {
-			this.evt_lay2[pos] = new(event.EventHeader)
-			this.evt_lay2[pos].Init("", 100)
+			this.evt_lay2[pos] = new(help.DListNode)
+			this.evt_lay2[pos].Init(nil)
 		}
 		header = this.evt_lay2[pos]
 	}
@@ -313,7 +313,7 @@ func (this *Thread) PostThreadMsg(tid int32, a help.IEvent) bool {
 }
 
 // 通过别名获取事件
-func (this *Thread) GetEvent(name string) *help.DListNode {
+func (this *Thread) GetEvent(name string) *help.IEvent {
 	if _, ok := this.evt_names[name]; ok {
 		return this.evt_names[name]
 	}
