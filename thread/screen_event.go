@@ -16,22 +16,28 @@ func (this *Event_heart_beat) Exec(home interface{}) bool {
 
 	this.Screen_.Tolua_heart_beat()
 
-	//
-	evt_hello := &Event_thread_hello{SrcThread: this.Screen_.Get_thread().Get_thread_id(), Chat: help.RandStr(5), Replay: false}
-	if this.Screen_.Get_thread().Get_thread_id() == 1 {
-		evt_hello.DstThread = 2
-	} else if this.Screen_.Get_thread().Get_thread_id() == 2 {
-		evt_hello.DstThread = 1
+	for i := 0; i < 1000; i++ {
+		this.SayHello(home)
 	}
-	evt_hello.Init("", 100)
-	home.(*ScreenThread).PostThreadMsg(evt_hello.DstThread, evt_hello)
 
 	//
 	evt := &Event_heart_beat{Screen_: this.Screen_}
-	evt.Init("", 3000)
+	evt.Init("", 100)
 	this.Screen_.Get_thread().PostEvent(evt)
 
 	return true
+}
+
+func (this *Event_heart_beat) SayHello(home interface{}) {
+	//
+	evt_hello5 := &Event_thread_hello{SrcThread: this.Screen_.Get_thread().Get_thread_id(), Chat: help.RandStr(5), Replay: false}
+	if this.Screen_.Get_thread().Get_thread_id() == 1 {
+		evt_hello5.DstThread = 2
+	} else if this.Screen_.Get_thread().Get_thread_id() == 2 {
+		evt_hello5.DstThread = 1
+	}
+	evt_hello5.Init("", 100)
+	home.(*ScreenThread).PostThreadMsg(evt_hello5.DstThread, evt_hello5)
 }
 
 // 事件 : 线程问好

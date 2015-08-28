@@ -67,7 +67,7 @@ type Thread struct {
 	pre_stop         bool                       // 预备停止
 	self             IThread                    // 自己, 初始化之后, 不要操作
 	first_run        bool                       // 线程首次运行
-	evt_lay1         []*help.DListNode          // 第一层事件池
+	evt_lay1         []help.DListNode           // 第一层事件池
 	evt_lay2         map[uint64]*help.DListNode // 第二层事件池
 	evt_names        map[string]help.IEvent     // 别名
 	evt_lay1Size     uint64                     // 第一层池容量
@@ -75,7 +75,8 @@ type Thread struct {
 	evt_lastRunCount uint64                     // 最近一次运行次数
 	evt_currRunCount uint64                     // 当前运行次数
 	evt_threadMsg    [Tid_last]*help.DListNode  // 保存将要发给其他线程的事件(消息)
-	log_Buffer       string                     // 线程日志缓冲
+	log_Buffer       []byte                     // 线程日志缓冲
+	log_BufferLen    int                        // 线程日志缓冲长度
 	log_TimeString   string                     // 时间格式(精确到秒2015.08.13 16:33:00)
 }
 
@@ -112,12 +113,11 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 	this.evt_currRunCount = 1
 	this.evt_lastRunCount = this.evt_currRunCount
 
-	this.evt_lay1 = make([]*help.DListNode, this.evt_lay1Size)
+	this.evt_lay1 = make([]help.DListNode, this.evt_lay1Size)
 	this.evt_lay2 = make(map[uint64]*help.DListNode, 0)
 	this.evt_names = make(map[string]help.IEvent, 0)
 
 	for i := uint64(0); i < this.evt_lay1Size; i++ {
-		this.evt_lay1[i] = new(help.DListNode)
 		this.evt_lay1[i].Init(nil)
 	}
 
@@ -125,6 +125,9 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 		this.evt_threadMsg[i] = new(help.DListNode)
 		this.evt_threadMsg[i].Init(nil)
 	}
+
+	this.log_Buffer = make([]byte, 1*1024*1024)
+	this.log_BufferLen = 0
 
 	this.log_TimeString = time.Now().Format("2006-01-02 15:04:05")
 
@@ -230,7 +233,7 @@ func (this *Thread) PostEvent(a help.IEvent) bool {
 			new_pos = new_pos - this.evt_lay1Size
 		}
 		pos = new_pos
-		header = this.evt_lay1[pos]
+		header = &this.evt_lay1[pos]
 	} else {
 		if _, ok := this.evt_lay2[pos]; !ok {
 			this.evt_lay2[pos] = new(help.DListNode)
@@ -332,12 +335,15 @@ func (this *Thread) runThreadMsg() {
 func (this *Thread) sendThreadMsg() {
 
 	// 发送日志到日志线程
-	if len(this.log_Buffer) > 0 {
+	if this.log_BufferLen > 0 {
+		fmt.Printf("log len is %d\n", this.log_BufferLen)
 		evt := &Event_thread_log{}
 		evt.Init("", 100)
-		evt.Data = this.log_Buffer
+		evt.Data = string(this.log_Buffer[:this.log_BufferLen])
 		this.PostThreadMsg(Tid_log, evt)
-		this.log_Buffer = ""
+
+		copy(this.log_Buffer[:0], "")
+		this.log_BufferLen = 0
 	}
 
 	for i := int32(Tid_master); i < Tid_last; i++ {
@@ -355,7 +361,7 @@ func (this *Thread) runEvents() {
 
 	for i := this.evt_lastRunCount; i <= all_count; i++ {
 		// 执行第一层事件
-		this.runExec(this.evt_lay1[this.evt_lay1Cursor])
+		this.runExec(&this.evt_lay1[this.evt_lay1Cursor])
 
 		// 执行第二层事件
 		if _, ok := this.evt_lay2[this.evt_currRunCount]; ok {
@@ -413,29 +419,39 @@ func (this *Thread) PrintAll() {
 // 线程日志 : 调试[D]级别日志
 func (this *Thread) LogDebug(f string, v ...interface{}) {
 	info := this.log_TimeString + " [D] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer += info
+	info_len := len(info)
+	copy(this.log_Buffer[this.log_BufferLen:], info)
+	this.log_BufferLen += info_len
 }
 
 // 线程日志 : 信息[I]级别日志
 func (this *Thread) LogInfo(f string, v ...interface{}) {
 	info := this.log_TimeString + " [I] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer += info
+	info_len := len(info)
+	copy(this.log_Buffer[this.log_BufferLen:], info)
+	this.log_BufferLen += info_len
 }
 
 // 线程日志 : 警告[W]级别日志
 func (this *Thread) LogWarn(f string, v ...interface{}) {
 	info := this.log_TimeString + " [W] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer += info
+	info_len := len(info)
+	copy(this.log_Buffer[this.log_BufferLen:], info)
+	this.log_BufferLen += info_len
 }
 
 // 线程日志 : 错误[E]级别日志
 func (this *Thread) LogError(f string, v ...interface{}) {
 	info := this.log_TimeString + " [E] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer += info
+	info_len := len(info)
+	copy(this.log_Buffer[this.log_BufferLen:], info)
+	this.log_BufferLen += info_len
 }
 
 // 线程日志 : 致命[F]级别日志
 func (this *Thread) LogFatal(f string, v ...interface{}) {
 	info := this.log_TimeString + " [F] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer += info
+	info_len := len(info)
+	copy(this.log_Buffer[this.log_BufferLen:], info)
+	this.log_BufferLen += info_len
 }

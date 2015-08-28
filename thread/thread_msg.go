@@ -13,14 +13,13 @@ func init() {
 
 // 线程间消息存放处
 type ThreadMsgPool struct {
-	lock   [Tid_last]sync.RWMutex    // 每个线程的消息池有一个独立的读写锁
-	header [Tid_last]*help.DListNode // 每个线程的消息池
+	lock   [Tid_last]sync.RWMutex   // 每个线程的消息池有一个独立的读写锁
+	header [Tid_last]help.DListNode // 每个线程的消息池
 }
 
 // 初始化
 func (this *ThreadMsgPool) Init() {
 	for i := 0; i < Tid_last; i++ {
-		this.header[i] = new(help.DListNode)
 		this.header[i].Init(nil)
 	}
 }
@@ -31,7 +30,7 @@ func (this *ThreadMsgPool) PostMsg(tid int32, e *help.DListNode) bool {
 		this.lock[tid].Lock()
 		defer this.lock[tid].Unlock()
 
-		header := this.header[tid]
+		header := &this.header[tid]
 
 		e_pre := e.Pre
 		e_next := e.Next
@@ -57,7 +56,7 @@ func (this *ThreadMsgPool) GetMsg(tid int32, e *help.DListNode) bool {
 		this.lock[tid].Lock()
 		defer this.lock[tid].Unlock()
 
-		header := this.header[tid]
+		header := &this.header[tid]
 
 		if !header.IsEmpty() {
 			header_pre := header.Pre
