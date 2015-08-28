@@ -1,7 +1,6 @@
 package thread
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/toophy/pangu/help"
@@ -76,7 +75,7 @@ type Thread struct {
 	evt_lastRunCount uint64                     // 最近一次运行次数
 	evt_currRunCount uint64                     // 当前运行次数
 	evt_threadMsg    [Tid_last]*help.DListNode  // 保存将要发给其他线程的事件(消息)
-	log_Buffer       bytes.Buffer               // 线程日志缓冲
+	log_Buffer       string                     // 线程日志缓冲
 	log_TimeString   string                     // 时间格式(精确到秒2015.08.13 16:33:00)
 }
 
@@ -333,12 +332,12 @@ func (this *Thread) runThreadMsg() {
 func (this *Thread) sendThreadMsg() {
 
 	// 发送日志到日志线程
-	if this.log_Buffer.Len() > 0 {
+	if len(this.log_Buffer) > 0 {
 		evt := &Event_thread_log{}
 		evt.Init("", 100)
 		evt.Data = this.log_Buffer
 		this.PostThreadMsg(Tid_log, evt)
-		this.log_Buffer.Reset()
+		this.log_Buffer = ""
 	}
 
 	for i := int32(Tid_master); i < Tid_last; i++ {
@@ -414,29 +413,29 @@ func (this *Thread) PrintAll() {
 // 线程日志 : 调试[D]级别日志
 func (this *Thread) LogDebug(f string, v ...interface{}) {
 	info := this.log_TimeString + " [D] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer.WriteString(info)
+	this.log_Buffer += info
 }
 
 // 线程日志 : 信息[I]级别日志
 func (this *Thread) LogInfo(f string, v ...interface{}) {
 	info := this.log_TimeString + " [I] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer.WriteString(info)
+	this.log_Buffer += info
 }
 
 // 线程日志 : 警告[W]级别日志
 func (this *Thread) LogWarn(f string, v ...interface{}) {
 	info := this.log_TimeString + " [W] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer.WriteString(info)
+	this.log_Buffer += info
 }
 
 // 线程日志 : 错误[E]级别日志
 func (this *Thread) LogError(f string, v ...interface{}) {
 	info := this.log_TimeString + " [E] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer.WriteString(info)
+	this.log_Buffer += info
 }
 
 // 线程日志 : 致命[F]级别日志
 func (this *Thread) LogFatal(f string, v ...interface{}) {
 	info := this.log_TimeString + " [F] " + fmt.Sprintf(f, v...) + "\n"
-	this.log_Buffer.WriteString(info)
+	this.log_Buffer += info
 }

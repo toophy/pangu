@@ -51,8 +51,8 @@ func (this *LogThread) on_end() {
 func (this *LogThread) on_run() {
 }
 
-func (this *LogThread) Add_log(d bytes.Buffer) {
-	this.Buffs.Write(d.Bytes())
+func (this *LogThread) Add_log(d string) {
+	this.Buffs.WriteString(d)
 }
 
 func (this *LogThread) Flush_log() {

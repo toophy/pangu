@@ -1,14 +1,13 @@
 package thread
 
 import (
-	"bytes"
 	"github.com/toophy/pangu/help"
 )
 
 // 事件 : 线程投递的日志
 type Event_thread_log struct {
 	help.Evt_base
-	Data bytes.Buffer
+	Data string
 }
 
 // 事件执行
