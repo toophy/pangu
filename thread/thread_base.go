@@ -8,6 +8,11 @@ import (
 )
 
 const (
+	LogLevel   = 1
+	LogBuffMax = 2 * 1024 * 1024
+)
+
+const (
 	Tid_master = iota
 	Tid_screen_1
 	Tid_screen_2
@@ -126,7 +131,7 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 		this.evt_threadMsg[i].Init(nil)
 	}
 
-	this.log_Buffer = make([]byte, 1*1024*1024)
+	this.log_Buffer = make([]byte, LogBuffMax)
 	this.log_BufferLen = 0
 
 	this.log_TimeString = time.Now().Format("2006-01-02 15:04:05")
@@ -422,6 +427,9 @@ func (this *Thread) LogDebug(f string, v ...interface{}) {
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
+	if LogLevel < 1 {
+		fmt.Println(info)
+	}
 }
 
 // 线程日志 : 信息[I]级别日志
@@ -430,6 +438,9 @@ func (this *Thread) LogInfo(f string, v ...interface{}) {
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
+	if LogLevel < 2 {
+		fmt.Println(info)
+	}
 }
 
 // 线程日志 : 警告[W]级别日志
@@ -438,6 +449,9 @@ func (this *Thread) LogWarn(f string, v ...interface{}) {
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
+	if LogLevel < 3 {
+		fmt.Println(info)
+	}
 }
 
 // 线程日志 : 错误[E]级别日志
@@ -446,6 +460,9 @@ func (this *Thread) LogError(f string, v ...interface{}) {
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
+	if LogLevel < 4 {
+		fmt.Println(info)
+	}
 }
 
 // 线程日志 : 致命[F]级别日志
@@ -454,4 +471,7 @@ func (this *Thread) LogFatal(f string, v ...interface{}) {
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
+	if LogLevel < 5 {
+		fmt.Println(info)
+	}
 }

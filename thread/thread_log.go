@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	LogBuffSize = 20 * 1024 * 1024
+	LogBuffSize = 10 * 1024 * 1024
 )
 
 // 场景线程
@@ -35,7 +35,7 @@ func (this *LogThread) Init_log_thread(heart_time int64, lay1_time uint64) error
 	if err == nil {
 		this.buffs.Grow(LogBuffSize)
 
-		name := fmt.Sprintf("../file_%d.log", this.Get_thread_id())
+		name := fmt.Sprintf("file_%d.log", this.Get_thread_id())
 		if !help.IsExist(name) {
 			os.Create(name)
 		}
@@ -73,7 +73,6 @@ func (this *LogThread) Add_log(d string) {
 }
 
 func (this *LogThread) Flush_log() {
-
 	this.logFile.Write(this.buffs.Bytes())
 	this.buffs.Reset()
 }
