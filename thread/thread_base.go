@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/toophy/pangu/help"
+	"strconv"
 	"time"
 )
 
@@ -29,7 +30,6 @@ const (
 	Tid_db_1
 	Tid_db_2
 	Tid_db_3
-	Tid_log
 	Tid_last
 )
 
@@ -134,7 +134,7 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 	this.log_Buffer = make([]byte, LogBuffMax)
 	this.log_BufferLen = 0
 
-	this.log_TimeString = time.Now().Format("2006-01-02 15:04:05")
+	this.log_TimeString = time.Now().Format("15:04:05")
 
 	return nil
 }
@@ -158,7 +158,7 @@ func (this *Thread) Run_thread() {
 
 			time.Sleep(next_time)
 
-			this.log_TimeString = time.Now().Format("01-02 15:04:05")
+			this.log_TimeString = time.Now().Format("15:04:05")
 
 			this.last_time = time.Now().UnixNano()
 			this.runThreadMsg()
@@ -341,11 +341,10 @@ func (this *Thread) sendThreadMsg() {
 
 	// 发送日志到日志线程
 	if this.log_BufferLen > 0 {
-		fmt.Printf("log len is %d\n", this.log_BufferLen)
 		evt := &Event_thread_log{}
 		evt.Init("", 100)
 		evt.Data = string(this.log_Buffer[:this.log_BufferLen])
-		this.PostThreadMsg(Tid_log, evt)
+		this.PostThreadMsg(Tid_master, evt)
 
 		copy(this.log_Buffer[:0], "")
 		this.log_BufferLen = 0
@@ -423,7 +422,7 @@ func (this *Thread) PrintAll() {
 
 // 线程日志 : 调试[D]级别日志
 func (this *Thread) LogDebug(f string, v ...interface{}) {
-	info := this.log_TimeString + " [D] " + fmt.Sprintf(f, v...) + "\n"
+	info := this.log_TimeString + " [D] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
@@ -434,7 +433,7 @@ func (this *Thread) LogDebug(f string, v ...interface{}) {
 
 // 线程日志 : 信息[I]级别日志
 func (this *Thread) LogInfo(f string, v ...interface{}) {
-	info := this.log_TimeString + " [I] " + fmt.Sprintf(f, v...) + "\n"
+	info := this.log_TimeString + " [I] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
@@ -445,7 +444,7 @@ func (this *Thread) LogInfo(f string, v ...interface{}) {
 
 // 线程日志 : 警告[W]级别日志
 func (this *Thread) LogWarn(f string, v ...interface{}) {
-	info := this.log_TimeString + " [W] " + fmt.Sprintf(f, v...) + "\n"
+	info := this.log_TimeString + " [W] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
@@ -456,7 +455,7 @@ func (this *Thread) LogWarn(f string, v ...interface{}) {
 
 // 线程日志 : 错误[E]级别日志
 func (this *Thread) LogError(f string, v ...interface{}) {
-	info := this.log_TimeString + " [E] " + fmt.Sprintf(f, v...) + "\n"
+	info := this.log_TimeString + " [E] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
@@ -467,7 +466,7 @@ func (this *Thread) LogError(f string, v ...interface{}) {
 
 // 线程日志 : 致命[F]级别日志
 func (this *Thread) LogFatal(f string, v ...interface{}) {
-	info := this.log_TimeString + " [F] " + fmt.Sprintf(f, v...) + "\n"
+	info := this.log_TimeString + " [F] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
 	info_len := len(info)
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len

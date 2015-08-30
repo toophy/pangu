@@ -1,10 +1,18 @@
 package thread
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	lua "github.com/toophy/gopher-lua"
+	"github.com/toophy/pangu/help"
+	"os"
 	"sync"
 	"time"
+)
+
+const (
+	LogBuffSize = 10 * 1024 * 1024
 )
 
 // 主线程
@@ -14,6 +22,8 @@ type Master struct {
 	threadCount int32
 	threadIds   map[int32]IThread
 	luaState    *lua.LState
+	buffs       bytes.Buffer // 日志总缓冲
+	logFile     *os.File
 }
 
 var myMaster *Master = nil
@@ -38,6 +48,18 @@ func (this *Master) Init_master_thread(self IThread, name string, heart_time int
 		this.threadCount = 0
 		this.threadIds = make(map[int32]IThread, 0)
 
+		this.buffs.Grow(LogBuffSize)
+
+		name := fmt.Sprintf("pangu.log")
+		if !help.IsExist(name) {
+			os.Create(name)
+		}
+		file, err := os.OpenFile(name, os.O_RDWR, os.ModePerm)
+		if err != nil {
+			return err
+		}
+		this.logFile = file
+		this.logFile.Seek(0, 2)
 		return nil
 	}
 	return err
@@ -95,16 +117,10 @@ func (this *Master) on_first_run() {
 		panic(errInit.Error())
 	}
 
-	log1, err := New_log_thread(300, 10000)
-	if err == nil && log1 != nil {
-		log1.Run_thread()
-	} else {
-		if err != nil {
-			println("[E] 新建日志线程失败:" + err.Error())
-		} else {
-			println("[E] 新建日志线程失败:")
-		}
-	}
+	// 处理文件
+	evt := &Event_flush_log{}
+	evt.Init("", 300)
+	this.PostEvent(evt)
 
 	sc1, err := New_screen_thread(Tid_screen_1, "场景线程1", 100, Evt_lay1_time)
 	if err == nil && sc1 != nil {
@@ -134,6 +150,7 @@ func (this *Master) on_end() {
 	if this.luaState != nil {
 		this.luaState.Close()
 		this.luaState = nil
+		this.logFile.Close()
 	}
 }
 
@@ -159,4 +176,13 @@ func (this *Master) ReloadLuaState() error {
 	// Require所有 master 文件夹里面的 *.lua 文件
 
 	return nil
+}
+
+func (this *Master) Add_log(d string) {
+	this.buffs.WriteString(d)
+}
+
+func (this *Master) Flush_log() {
+	this.logFile.Write(this.buffs.Bytes())
+	this.buffs.Reset()
 }
