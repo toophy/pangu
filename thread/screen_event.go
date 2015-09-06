@@ -16,7 +16,7 @@ func (this *Event_heart_beat) Exec(home interface{}) bool {
 
 	this.Screen_.Tolua_heart_beat()
 
-	for i := 0; i < 200; i++ {
+	for i := 0; i < 20000; i++ {
 		this.SayHello(home)
 	}
 
@@ -28,7 +28,7 @@ func (this *Event_heart_beat) Exec(home interface{}) bool {
 }
 
 func (this *Event_heart_beat) SayHello(home interface{}) {
-	evt := &Event_thread_hello{SrcThread: this.Screen_.Get_thread().Get_thread_id(), Chat: help.RandStr(5), Replay: false}
+	evt := &Event_thread_hello{SrcThread: this.Screen_.Get_thread().Get_thread_id(), Chat: /*help.RandStr(5)*/ "nimei", Replay: false}
 	if this.Screen_.Get_thread().Get_thread_id() == 1 {
 		evt.DstThread = 2
 	} else if this.Screen_.Get_thread().Get_thread_id() == 2 {
@@ -50,10 +50,10 @@ type Event_thread_hello struct {
 // 事件执行
 func (this *Event_thread_hello) Exec(home interface{}) bool {
 
-	home.(*ScreenThread).LogDebug("%s", this.Chat)
+	//home.(*ScreenThread).LogDebug("%s", this.Chat)
 
 	if !this.Replay {
-		evt := &Event_thread_hello{SrcThread: this.DstThread, DstThread: this.SrcThread, Chat: "r " + this.Chat, Replay: true}
+		evt := &Event_thread_hello{SrcThread: this.DstThread, DstThread: this.SrcThread, Chat: /*"r " +*/ this.Chat, Replay: true}
 		evt.Init("", 100)
 		home.(*ScreenThread).PostThreadMsg(evt.DstThread, evt)
 	}

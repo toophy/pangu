@@ -10,7 +10,7 @@ import (
 
 const (
 	LogLevel   = 1
-	LogBuffMax = 2 * 1024 * 1024
+	LogBuffMax = 100 * 1024 * 1024
 )
 
 const (

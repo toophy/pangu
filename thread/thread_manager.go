@@ -133,6 +133,11 @@ func (this *Master) on_first_run() {
 		}
 	}
 
+	evt1 := &Event_close_thread{}
+	evt1.Init("", 60000)
+	evt1.Master = sc1
+	this.PostEvent(evt1)
+
 	sc2, err := New_screen_thread(Tid_screen_2, "场景线程2", 100, Evt_lay1_time)
 	if err == nil && sc2 != nil {
 		sc2.Run_thread()
@@ -143,6 +148,11 @@ func (this *Master) on_first_run() {
 			this.LogError("新建场景线程2失败:")
 		}
 	}
+
+	evt2 := &Event_close_thread{}
+	evt2.Init("", 60000)
+	evt2.Master = sc2
+	this.PostEvent(evt2)
 }
 
 // 响应线程退出
