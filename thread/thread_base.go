@@ -59,6 +59,9 @@ type IThread interface {
 	LogWarn(f string, v ...interface{})  // 线程日志 : 警告[W]级别日志
 	LogError(f string, v ...interface{}) // 线程日志 : 错误[E]级别日志
 	LogFatal(f string, v ...interface{}) // 线程日志 : 致命[F]级别日志
+
+	sendThreadFreeNode()                // 发送线程间回收
+	releaseDlinkNode(d *help.DListNode) // 释放节点
 }
 
 // 线程基本功能
@@ -83,6 +86,9 @@ type Thread struct {
 	log_Buffer       []byte                     // 线程日志缓冲
 	log_BufferLen    int                        // 线程日志缓冲长度
 	log_TimeString   string                     // 时间格式(精确到秒2015.08.13 16:33:00)
+	node_pool        []help.DListNode           // 节点池
+	node_free        help.DListNode             // 自由节点
+	node_preFree     [Tid_last]*help.DListNode  // 预备释放的节点(其他线程释放)
 }
 
 // 初始化线程(必须调用)
@@ -136,6 +142,22 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 
 	this.log_TimeString = time.Now().Format("15:04:05")
 
+	this.node_free.Init(nil)
+	this.node_free.SrcTid = this.id
+
+	this.node_pool = make([]help.DListNode, 100000)
+	for i := 0; i < 100000; i++ {
+		this.node_pool[i].Init(nil)
+		this.node_pool[i].SrcTid = this.id
+		this.addFreeDlinkNode(&this.node_pool[i])
+	}
+
+	for i := 0; i < Tid_last; i++ {
+		this.node_preFree[i] = new(help.DListNode)
+		this.node_preFree[i].Init(nil)
+		this.node_preFree[i].SrcTid = this.id
+	}
+
 	return nil
 }
 
@@ -153,6 +175,11 @@ func (this *Thread) Run_thread() {
 		run_time := int64(0)
 
 		this.self.on_first_run()
+
+		//
+		evtReleaseNode := &Event_pre_release_dlinknode{}
+		evtReleaseNode.Init("", 3000)
+		this.PostEvent(evtReleaseNode)
 
 		for {
 
@@ -281,7 +308,8 @@ func (this *Thread) PostThreadMsg(tid int32, a help.IEvent) bool {
 	if tid >= Tid_master && tid < Tid_last {
 		header := this.evt_threadMsg[tid]
 
-		n := &help.DListNode{}
+		//n := &help.DListNode{}
+		n := this.newDlinkNode()
 		n.Init(a)
 
 		if !a.AddNode(n) {
@@ -333,6 +361,14 @@ func (this *Thread) runThreadMsg() {
 		e := n.Data.(help.IEvent)
 		e.Exec(this.self)
 		e.Destroy()
+
+		// 节点 n, 需要原始线程回收
+		old_pre := this.node_preFree[n.SrcTid].Pre
+
+		this.node_preFree[n.SrcTid].Pre = n
+		n.Next = this.node_preFree[n.SrcTid]
+		n.Pre = old_pre
+		old_pre.Next = n
 	}
 }
 
@@ -472,5 +508,99 @@ func (this *Thread) LogFatal(f string, v ...interface{}) {
 	this.log_BufferLen += info_len
 	if LogLevel < 5 {
 		fmt.Println(info)
+	}
+}
+
+// 节点池 : 新建节点
+func (this *Thread) newDlinkNode() *help.DListNode {
+	if this.node_free.IsEmpty() {
+		return nil
+	}
+	free := this.node_free.Next
+	free.Pop()
+
+	return free
+}
+
+// 节点池 : 释放节点
+func (this *Thread) releaseDlinkNode(d *help.DListNode) {
+	if d == nil {
+		return
+	}
+
+	id := d.SrcTid
+
+	if id == this.Get_thread_id() {
+		// 释放一串
+		if !d.IsEmpty() {
+			header_pre := d.Pre
+			header_next := d.Next
+
+			d.Init(nil)
+
+			old_pre := this.node_free.Pre
+
+			this.node_free.Pre = header_pre
+			header_pre.Next = &this.node_free
+
+			header_next.Pre = old_pre
+			old_pre.Next = header_next
+		}
+	} else {
+		// 投递
+		evt := &Event_release_dlinknode{}
+		evt.Header.Init(nil)
+
+		header_pre := d.Pre
+		header_next := d.Next
+
+		d.Init(nil)
+
+		old_pre := evt.Header.Pre
+
+		evt.Header.Pre = header_pre
+		header_pre.Next = &evt.Header
+
+		header_next.Pre = old_pre
+		old_pre.Next = header_next
+
+		this.PostThreadMsg(id, evt)
+	}
+}
+
+// 节点池 : 增加自由节点
+func (this *Thread) addFreeDlinkNode(n *help.DListNode) {
+	old_pre := this.node_free.Pre
+
+	this.node_free.Pre = n
+	n.Next = &this.node_free
+	n.Pre = old_pre
+	old_pre.Next = n
+}
+
+// 节点池 : 发出线程间垃圾回收
+func (this *Thread) sendThreadFreeNode() {
+	for i := int32(0); i < Tid_last; i++ {
+		if !this.node_preFree[i].IsEmpty() {
+			evt := &Event_release_dlinknode{}
+			evt.Init("", 100)
+			evt.Header.Init(nil)
+
+			// 投递
+			header_pre := this.node_preFree[i].Pre
+			header_next := this.node_preFree[i].Next
+
+			this.node_preFree[i].Init(nil)
+
+			old_pre := evt.Header.Pre
+
+			evt.Header.Pre = header_pre
+			header_pre.Next = &evt.Header
+
+			header_next.Pre = old_pre
+			old_pre.Next = header_next
+
+			this.PostThreadMsg(i, evt)
+		}
 	}
 }

@@ -1,9 +1,10 @@
 package help
 
 type DListNode struct {
-	Pre  *DListNode  // 前一个
-	Next *DListNode  // 后一个
-	Data interface{} // 事件对象
+	Pre    *DListNode  // 前一个
+	Next   *DListNode  // 后一个
+	SrcTid int32       // 源线程
+	Data   interface{} // 事件对象
 }
 
 func (this *DListNode) Init(d interface{}) {
