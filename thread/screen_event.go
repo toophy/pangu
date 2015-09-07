@@ -1,6 +1,7 @@
 package thread
 
 import (
+	_ "bytes"
 	"fmt"
 	"github.com/toophy/pangu/help"
 )
@@ -16,7 +17,7 @@ func (this *Event_heart_beat) Exec(home interface{}) bool {
 
 	this.Screen_.Tolua_heart_beat()
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 20000; i++ {
 		this.SayHello(home)
 	}
 
@@ -50,7 +51,7 @@ type Event_thread_hello struct {
 // 事件执行
 func (this *Event_thread_hello) Exec(home interface{}) bool {
 
-	//home.(*ScreenThread).LogDebug("%s", this.Chat)
+	// home.(*ScreenThread).LogDebug("%s", this.Chat)
 
 	if !this.Replay {
 		evt := &Event_thread_hello{SrcThread: this.DstThread, DstThread: this.SrcThread, Chat: /*"r " +*/ this.Chat, Replay: true}

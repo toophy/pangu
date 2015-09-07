@@ -89,6 +89,7 @@ type Thread struct {
 	node_pool        []help.DListNode           // 节点池
 	node_free        help.DListNode             // 自由节点
 	node_preFree     [Tid_last]*help.DListNode  // 预备释放的节点(其他线程释放)
+	node_alloc_count int
 }
 
 // 初始化线程(必须调用)
@@ -140,13 +141,15 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 	this.log_Buffer = make([]byte, LogBuffMax)
 	this.log_BufferLen = 0
 
+	fmt.Println("Init Thread ", id)
+
 	this.log_TimeString = time.Now().Format("15:04:05")
 
 	this.node_free.Init(nil)
 	this.node_free.SrcTid = this.id
 
-	this.node_pool = make([]help.DListNode, 100000)
-	for i := 0; i < 100000; i++ {
+	this.node_pool = make([]help.DListNode, 200000)
+	for i := 0; i < 200000; i++ {
 		this.node_pool[i].Init(nil)
 		this.node_pool[i].SrcTid = this.id
 		this.addFreeDlinkNode(&this.node_pool[i])
@@ -178,7 +181,7 @@ func (this *Thread) Run_thread() {
 
 		//
 		evtReleaseNode := &Event_pre_release_dlinknode{}
-		evtReleaseNode.Init("", 3000)
+		evtReleaseNode.Init("", 100)
 		this.PostEvent(evtReleaseNode)
 
 		for {
@@ -302,7 +305,7 @@ func (this *Thread) PostEvent(a help.IEvent) bool {
 // 投递线程间消息
 func (this *Thread) PostThreadMsg(tid int32, a help.IEvent) bool {
 	if tid == this.Get_thread_id() {
-		fmt.Printf("[W] %d post msg failed\n", tid)
+		this.LogWarn("PostThreadMsg dont post to self")
 		return false
 	}
 	if tid >= Tid_master && tid < Tid_last {
@@ -310,9 +313,14 @@ func (this *Thread) PostThreadMsg(tid int32, a help.IEvent) bool {
 
 		//n := &help.DListNode{}
 		n := this.newDlinkNode()
+		if n == nil {
+			this.LogError("PostThreadMsg newDlinkNode failed")
+			return false
+		}
 		n.Init(a)
 
 		if !a.AddNode(n) {
+			this.LogError("PostThreadMsg AddNode failed")
 			return false
 		}
 
@@ -325,7 +333,7 @@ func (this *Thread) PostThreadMsg(tid int32, a help.IEvent) bool {
 
 		return true
 	}
-	fmt.Printf("[W] %d post msg failed2\n", tid)
+	this.LogWarn("PostThreadMsg post msg failed")
 	return false
 }
 
@@ -513,9 +521,13 @@ func (this *Thread) LogFatal(f string, v ...interface{}) {
 
 // 节点池 : 新建节点
 func (this *Thread) newDlinkNode() *help.DListNode {
+
 	if this.node_free.IsEmpty() {
+		this.LogFatal("newDlinkNode nil(%d)", this.node_alloc_count)
 		return nil
 	}
+
+	this.node_alloc_count++
 	free := this.node_free.Next
 	free.Pop()
 
@@ -524,11 +536,11 @@ func (this *Thread) newDlinkNode() *help.DListNode {
 
 // 节点池 : 释放节点
 func (this *Thread) releaseDlinkNode(d *help.DListNode) {
-	if d == nil {
+	if d == nil || d.Next == nil {
 		return
 	}
 
-	id := d.SrcTid
+	id := d.Next.SrcTid
 
 	if id == this.Get_thread_id() {
 		// 释放一串
@@ -547,6 +559,7 @@ func (this *Thread) releaseDlinkNode(d *help.DListNode) {
 			old_pre.Next = header_next
 		}
 	} else {
+		fmt.Println("releaseDlinkNode XZZZ")
 		// 投递
 		evt := &Event_release_dlinknode{}
 		evt.Header.Init(nil)

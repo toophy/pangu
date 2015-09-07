@@ -1,0 +1,1 @@
+go tool pprof pangu.test.exe cprof$1

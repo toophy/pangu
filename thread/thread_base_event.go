@@ -33,7 +33,7 @@ func (this *Event_pre_release_dlinknode) Exec(home interface{}) bool {
 
 	//
 	evtReleaseNode := &Event_pre_release_dlinknode{}
-	evtReleaseNode.Init("", 3000)
+	evtReleaseNode.Init("", 100)
 	home.(IThread).PostEvent(evtReleaseNode)
 
 	return true
@@ -48,7 +48,8 @@ type Event_release_dlinknode struct {
 // 事件执行
 func (this *Event_release_dlinknode) Exec(home interface{}) bool {
 	// 从线程中释放这个节点
-	home.(IThread).releaseDlinkNode(&this.Header)
-
+	if !this.Header.IsEmpty() {
+		home.(IThread).releaseDlinkNode(&this.Header)
+	}
 	return true
 }

@@ -18,14 +18,14 @@ type Screen struct {
 }
 
 func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool {
+	if t == nil {
+		fmt.Println("场景线程不存在")
+		return false
+	}
 	this.InitEventHeader()
 	config := screen_config.GetScreenConfig(oid)
 	if config == nil {
-		fmt.Printf("场景%s加载失败: 没有找到场景模板(%d)\n", name, oid)
-		return false
-	}
-	if t == nil {
-		fmt.Println("场景线程不存在")
+		t.LogError("场景%s加载失败: 没有找到场景模板(%d)", name, oid)
 		return false
 	}
 
@@ -40,7 +40,7 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 	this.Actors = make(map[int64]*actor.Actor, 0)
 	this.thread = t
 	this.luaData = this.thread.GetLuaState().NewTable()
-	fmt.Printf("场景%s加载成功\n", this.Name)
+	t.LogInfo("场景%s加载成功", this.Name)
 	this.Tolua_screen_init()
 
 	evt := &Event_heart_beat{}
@@ -56,7 +56,7 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 // 场景内的精灵呢? 有些定时器, 事件, 也是场景关联的
 // 没有场景的精灵怎么进行操作呢?
 func (this *Screen) Unload() {
-	fmt.Printf("场景%s卸载成功\n", this.Name)
+	this.thread.LogInfo("场景%s卸载成功", this.Name)
 	//this.thread.RemoveEventList(this.GetEventHeader())
 	this.thread = nil
 	this.luaData = nil

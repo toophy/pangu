@@ -3,7 +3,6 @@ package thread
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	lua "github.com/toophy/gopher-lua"
 	"github.com/toophy/pangu/help"
 	"os"
@@ -50,7 +49,7 @@ func (this *Master) Init_master_thread(self IThread, name string, heart_time int
 
 		this.buffs.Grow(LogBuffSize)
 
-		name := fmt.Sprintf("pangu.log")
+		name := "pangu.log"
 		if !help.IsExist(name) {
 			os.Create(name)
 		}
@@ -134,7 +133,7 @@ func (this *Master) on_first_run() {
 	}
 
 	evt1 := &Event_close_thread{}
-	evt1.Init("", 60000)
+	evt1.Init("", 120000)
 	evt1.Master = sc1
 	this.PostEvent(evt1)
 
@@ -150,7 +149,7 @@ func (this *Master) on_first_run() {
 	}
 
 	evt2 := &Event_close_thread{}
-	evt2.Init("", 60000)
+	evt2.Init("", 120000)
 	evt2.Master = sc2
 	this.PostEvent(evt2)
 }
@@ -193,6 +192,8 @@ func (this *Master) Add_log(d string) {
 }
 
 func (this *Master) Flush_log() {
-	this.logFile.Write(this.buffs.Bytes())
-	this.buffs.Reset()
+	if this.buffs.Len() > 0 {
+		this.logFile.Write(this.buffs.Bytes())
+		this.buffs.Reset()
+	}
 }

@@ -1,7 +1,6 @@
 package thread
 
 import (
-	"fmt"
 	lua "github.com/toophy/gopher-lua"
 )
 
@@ -10,7 +9,7 @@ func (this *Screen) Tolua_screen_init() {
 	// 捕捉异常
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println(r.(error).Error())
+			this.thread.LogError(r.(error).Error())
 		}
 	}()
 
@@ -29,7 +28,7 @@ func (this *Screen) Tolua_heart_beat() {
 	// 捕捉异常
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println(r.(error).Error())
+			this.thread.LogError(r.(error).Error())
 		}
 	}()
 
