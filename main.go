@@ -17,7 +17,7 @@ const (
 func main() {
 	// 检查log目录
 	if !help.IsExist(thread.LogDir) {
-		os.Create(thread.LogDir)
+		os.MkdirAll(thread.LogDir, os.ModeDir)
 	}
 
 	// 创建pprof文件

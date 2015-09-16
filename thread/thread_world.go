@@ -188,7 +188,7 @@ func (this *WorldThread) ReloadLuaState() error {
 	this.luaState.SetGlobal("ts", this.GetLUserData("WorldThread", this))
 
 	// 执行初始化脚本
-	this.luaState.DoFile("thread_init.lua")
+	this.luaState.DoFile("data/thread_init.lua")
 
 	// 加载所有 screens 文件夹里面的 *.lua 文件
 	this.luaState.RequireDir("data/world")
