@@ -1,2 +1,3 @@
-go build -o game.exe main.go
-game.exe
+go build -o ./bin/pangu.exe main.go
+cd ./bin/
+pangu.exe

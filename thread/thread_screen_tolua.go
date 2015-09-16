@@ -29,7 +29,7 @@ func (this *ScreenThread) Tolua_OnInitScreen() (ret int) {
 		Fn:      this.luaState.GetFunction("main", "OnInitScreen"), // 调用的Lua函数
 		NRet:    1,                                                 // 返回值的数量
 		Protect: true,                                              // 保护?
-	}, this.GetLUserData("ScreenThread", this)); err != nil {
+	}); err != nil {
 		panic(err)
 	}
 

@@ -50,9 +50,7 @@ func regLua_screen_thread(struct_name string, L *lua.LState) error {
 				p := check(L)
 				name := L.CheckString(2)
 				oid := int32(L.CheckInt(3))
-
 				ret := p.Add_screen(name, oid)
-
 				L.Push(lua.LBool(ret))
 				return 1
 			},
@@ -60,11 +58,48 @@ func regLua_screen_thread(struct_name string, L *lua.LState) error {
 			// 获取线程号
 			"Get_thread_id": func(L *lua.LState) int {
 				p := check(L)
-
 				ret := p.Get_thread_id()
-
 				L.Push(lua.LNumber(ret))
+				return 1
+			},
 
+			// LogDebug
+			"LogDebug": func(L *lua.LState) int {
+				p := check(L)
+				data := L.CheckString(2)
+				p.LogDebug(data)
+				return 1
+			},
+
+			// LogInfo
+			"LogInfo": func(L *lua.LState) int {
+				p := check(L)
+				data := L.CheckString(2)
+				p.LogInfo(data)
+				return 1
+			},
+
+			// LogWarn
+			"LogWarn": func(L *lua.LState) int {
+				p := check(L)
+				data := L.CheckString(2)
+				p.LogWarn(data)
+				return 1
+			},
+
+			// LogError
+			"LogError": func(L *lua.LState) int {
+				p := check(L)
+				data := L.CheckString(2)
+				p.LogError(data)
+				return 1
+			},
+
+			// LogFatal
+			"LogFatal": func(L *lua.LState) int {
+				p := check(L)
+				data := L.CheckString(2)
+				p.LogFatal(data)
 				return 1
 			},
 		}))

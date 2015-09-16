@@ -17,7 +17,7 @@ func (this *Event_heart_beat) Exec(home interface{}) bool {
 
 	this.Screen_.Tolua_heart_beat()
 
-	for i := 0; i < 20000; i++ {
+	for i := 0; i < 1; i++ {
 		this.SayHello(home)
 	}
 

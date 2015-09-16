@@ -30,7 +30,7 @@ func New_screen_thread(id int32, name string, heart_time int64, lay1_time uint64
 // 初始化场景线程
 func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time int64, lay1_time uint64) error {
 	if id < Tid_screen_1 || id > Tid_screen_9 {
-		return errors.New("[E] 线程ID超出范围 [Tid_screen_1,Tid_screen_9]")
+		return errors.New("线程ID超出范围 [Tid_screen_1,Tid_screen_9]")
 	}
 	err := this.Init_thread(this, id, name, heart_time, lay1_time)
 	if err == nil {
@@ -96,11 +96,17 @@ func (this *ScreenThread) reloadLuaState() error {
 
 	this.luaState = lua.NewState()
 	if this.luaState == nil {
-		return errors.New("[E] 场景线程初始化Lua失败")
+		return errors.New("场景线程初始化Lua失败")
 	}
 
 	RegLua_all_thread_screen(this.luaState)
 	RegLua_all_screen(this.luaState)
+
+	// 注册公告变量-->本线程
+	this.luaState.SetGlobal("ts", this.GetLUserData("ScreenThread", this))
+
+	// 执行初始化脚本
+	this.luaState.DoFile("data/thread_init.lua")
 
 	// 加载所有 screens 文件夹里面的 *.lua 文件
 	this.luaState.RequireDir("data/screens")

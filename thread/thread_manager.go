@@ -12,6 +12,9 @@ import (
 
 const (
 	LogBuffSize = 10 * 1024 * 1024
+	LogDir      = "../log"
+	ProfFile    = "pangu_prof.log"
+	LogFileName = LogDir + "/pangu.log"
 )
 
 // 主线程
@@ -49,11 +52,10 @@ func (this *Master) Init_master_thread(self IThread, name string, heart_time int
 
 		this.buffs.Grow(LogBuffSize)
 
-		name := "pangu.log"
-		if !help.IsExist(name) {
-			os.Create(name)
+		if !help.IsExist(LogFileName) {
+			os.Create(LogFileName)
 		}
-		file, err := os.OpenFile(name, os.O_RDWR, os.ModePerm)
+		file, err := os.OpenFile(LogFileName, os.O_RDWR, os.ModePerm)
 		if err != nil {
 			return err
 		}
@@ -133,7 +135,7 @@ func (this *Master) on_first_run() {
 	}
 
 	evt1 := &Event_close_thread{}
-	evt1.Init("", 120000)
+	evt1.Init("", 10000)
 	evt1.Master = sc1
 	this.PostEvent(evt1)
 
@@ -149,7 +151,7 @@ func (this *Master) on_first_run() {
 	}
 
 	evt2 := &Event_close_thread{}
-	evt2.Init("", 120000)
+	evt2.Init("", 10000)
 	evt2.Master = sc2
 	this.PostEvent(evt2)
 }

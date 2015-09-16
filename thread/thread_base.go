@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/toophy/pangu/help"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -90,6 +91,7 @@ type Thread struct {
 	node_free        help.DListNode             // 自由节点
 	node_preFree     [Tid_last]*help.DListNode  // 预备释放的节点(其他线程释放)
 	node_alloc_count int
+	event_pool       sync.Pool
 }
 
 // 初始化线程(必须调用)
@@ -140,8 +142,6 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 
 	this.log_Buffer = make([]byte, LogBuffMax)
 	this.log_BufferLen = 0
-
-	fmt.Println("Init Thread ", id)
 
 	this.log_TimeString = time.Now().Format("15:04:05")
 
@@ -471,7 +471,7 @@ func (this *Thread) LogDebug(f string, v ...interface{}) {
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
 	if LogLevel < 1 {
-		fmt.Println(info)
+		fmt.Print(info)
 	}
 }
 
@@ -482,7 +482,7 @@ func (this *Thread) LogInfo(f string, v ...interface{}) {
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
 	if LogLevel < 2 {
-		fmt.Println(info)
+		fmt.Print(info)
 	}
 }
 
@@ -493,7 +493,7 @@ func (this *Thread) LogWarn(f string, v ...interface{}) {
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
 	if LogLevel < 3 {
-		fmt.Println(info)
+		fmt.Print(info)
 	}
 }
 
@@ -504,7 +504,7 @@ func (this *Thread) LogError(f string, v ...interface{}) {
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
 	if LogLevel < 4 {
-		fmt.Println(info)
+		fmt.Print(info)
 	}
 }
 
@@ -515,7 +515,7 @@ func (this *Thread) LogFatal(f string, v ...interface{}) {
 	copy(this.log_Buffer[this.log_BufferLen:], info)
 	this.log_BufferLen += info_len
 	if LogLevel < 5 {
-		fmt.Println(info)
+		fmt.Print(info)
 	}
 }
 

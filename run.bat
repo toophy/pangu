@@ -1,1 +1,2 @@
-game.exe
+cd ./bin/
+pangu.exe
