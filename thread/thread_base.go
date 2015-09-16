@@ -170,7 +170,7 @@ func (this *Thread) Run_thread() {
 	// 处理线程间接收消息, 分配到水表定时器
 	// 执行水表定时器
 	go func() {
-		GetMaster().Add_run_thread(this.self)
+		GetWorld().Add_run_thread(this.self)
 
 		this.start_time = time.Now().UnixNano()
 		this.last_time = this.start_time
@@ -215,7 +215,7 @@ func (this *Thread) Run_thread() {
 			}
 		}
 
-		GetMaster().Release_run_thread(this.self)
+		GetWorld().Release_run_thread(this.self)
 	}()
 }
 

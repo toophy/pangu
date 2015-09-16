@@ -12,7 +12,7 @@ type Event_thread_log struct {
 
 // 事件执行
 func (this *Event_thread_log) Exec(home interface{}) bool {
-	home.(*Master).Add_log(this.Data)
+	home.(*WorldThread).Add_log(this.Data)
 	return true
 }
 
@@ -23,11 +23,11 @@ type Event_flush_log struct {
 
 // 事件执行
 func (this *Event_flush_log) Exec(home interface{}) bool {
-	home.(*Master).Flush_log()
+	home.(*WorldThread).Flush_log()
 
 	evt := &Event_flush_log{}
 	evt.Init("", 300)
-	home.(*Master).PostEvent(evt)
+	home.(*WorldThread).PostEvent(evt)
 
 	return true
 }

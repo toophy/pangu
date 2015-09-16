@@ -18,7 +18,7 @@ const (
 )
 
 // 主线程
-type Master struct {
+type WorldThread struct {
 	Thread
 	threadLock  sync.RWMutex
 	threadCount int32
@@ -28,23 +28,23 @@ type Master struct {
 	logFile     *os.File
 }
 
-var myMaster *Master = nil
+var myWorldThread *WorldThread = nil
 
 // 获取主线程
-func GetMaster() *Master {
-	if myMaster == nil {
-		myMaster = &Master{}
-		err := myMaster.Init_master_thread(myMaster, "主线程", 100, Evt_lay1_time)
+func GetWorld() *WorldThread {
+	if myWorldThread == nil {
+		myWorldThread = &WorldThread{}
+		err := myWorldThread.Init_master_thread(myWorldThread, "主线程", 100, Evt_lay1_time)
 		if err != nil {
 			panic(err.Error())
 		}
-		myMaster.Run_thread()
+		myWorldThread.Run_thread()
 	}
-	return myMaster
+	return myWorldThread
 }
 
 // 初始化主线程
-func (this *Master) Init_master_thread(self IThread, name string, heart_time int64, lay1_time uint64) error {
+func (this *WorldThread) Init_master_thread(self IThread, name string, heart_time int64, lay1_time uint64) error {
 	err := this.Init_thread(self, Tid_master, name, heart_time, lay1_time)
 	if err == nil {
 		this.threadCount = 0
@@ -67,7 +67,7 @@ func (this *Master) Init_master_thread(self IThread, name string, heart_time int
 }
 
 // 增加运行的线程
-func (this *Master) Add_run_thread(a IThread) {
+func (this *WorldThread) Add_run_thread(a IThread) {
 	this.threadLock.Lock()
 	defer this.threadLock.Unlock()
 
@@ -78,7 +78,7 @@ func (this *Master) Add_run_thread(a IThread) {
 }
 
 // 释放运行的线程
-func (this *Master) Release_run_thread(a IThread) {
+func (this *WorldThread) Release_run_thread(a IThread) {
 	this.threadLock.Lock()
 	defer this.threadLock.Unlock()
 
@@ -89,7 +89,7 @@ func (this *Master) Release_run_thread(a IThread) {
 }
 
 // 等待所有线程结束
-func (this *Master) Wait_thread_over() {
+func (this *WorldThread) Wait_thread_over() {
 	for {
 		time.Sleep(10 * time.Second)
 
@@ -111,7 +111,7 @@ func (this *Master) Wait_thread_over() {
 }
 
 // 首次运行
-func (this *Master) on_first_run() {
+func (this *WorldThread) on_first_run() {
 
 	errInit := this.ReloadLuaState()
 	if errInit != nil {
@@ -157,7 +157,7 @@ func (this *Master) on_first_run() {
 }
 
 // 响应线程退出
-func (this *Master) on_end() {
+func (this *WorldThread) on_end() {
 	if this.luaState != nil {
 		this.luaState.Close()
 		this.luaState = nil
@@ -166,11 +166,11 @@ func (this *Master) on_end() {
 }
 
 // 响应线程运行
-func (this *Master) on_run() {
+func (this *WorldThread) on_run() {
 }
 
 // 初始化LuaState, 可以用来 Reload LuaState
-func (this *Master) ReloadLuaState() error {
+func (this *WorldThread) ReloadLuaState() error {
 
 	if this.luaState != nil {
 		this.luaState.Close()
@@ -182,18 +182,25 @@ func (this *Master) ReloadLuaState() error {
 		return errors.New("[E] 主线程初始化Lua失败")
 	}
 
-	// RegLua_all(this.luaState)
+	RegLua_all_thread_world(this.luaState)
 
-	// Require所有 master 文件夹里面的 *.lua 文件
+	// 注册公告变量-->本线程
+	this.luaState.SetGlobal("ts", this.GetLUserData("WorldThread", this))
+
+	// 执行初始化脚本
+	this.luaState.DoFile("thread_init.lua")
+
+	// 加载所有 screens 文件夹里面的 *.lua 文件
+	this.luaState.RequireDir("data/world")
 
 	return nil
 }
 
-func (this *Master) Add_log(d string) {
+func (this *WorldThread) Add_log(d string) {
 	this.buffs.WriteString(d)
 }
 
-func (this *Master) Flush_log() {
+func (this *WorldThread) Flush_log() {
 	if this.buffs.Len() > 0 {
 		this.logFile.Write(this.buffs.Bytes())
 		this.buffs.Reset()

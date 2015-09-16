@@ -29,5 +29,5 @@ func main() {
 	defer pprof.StopCPUProfile()
 
 	// 启动并等待主线程
-	thread.GetMaster().Wait_thread_over()
+	thread.GetWorld().Wait_thread_over()
 }
