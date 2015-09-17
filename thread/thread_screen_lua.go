@@ -55,6 +55,15 @@ func regLua_screen_thread(struct_name string, L *lua.LState) error {
 				return 1
 			},
 
+			// 删除场景
+			"Del_screen": func(L *lua.LState) int {
+				p := check(L)
+				id := int32(L.CheckInt(2))
+				ret := p.Del_screen(oid)
+				L.Push(lua.LBool(ret))
+				return 1
+			},
+
 			// 获取线程号
 			"Get_thread_id": func(L *lua.LState) int {
 				p := check(L)
