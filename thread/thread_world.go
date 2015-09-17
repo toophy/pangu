@@ -30,7 +30,7 @@ var myWorldThread *WorldThread = nil
 func GetWorld() *WorldThread {
 	if myWorldThread == nil {
 		myWorldThread = &WorldThread{}
-		err := myWorldThread.Init_master_thread(myWorldThread, "主线程", 100, Evt_lay1_time)
+		err := myWorldThread.Init_master_thread(myWorldThread, "世界线程", 100, Evt_lay1_time)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -141,7 +141,7 @@ func (this *WorldThread) ReloadLuaState() error {
 
 	this.luaState = lua.NewState()
 	if this.luaState == nil {
-		return errors.New("[E] 主线程初始化Lua失败")
+		return errors.New("[E] 世界线程初始化Lua失败")
 	}
 
 	RegLua_all_thread_world(this.luaState)

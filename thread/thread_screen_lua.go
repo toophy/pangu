@@ -59,7 +59,7 @@ func regLua_screen_thread(struct_name string, L *lua.LState) error {
 			"Del_screen": func(L *lua.LState) int {
 				p := check(L)
 				id := int32(L.CheckInt(2))
-				ret := p.Del_screen(oid)
+				ret := p.Del_screen(id)
 				L.Push(lua.LBool(ret))
 				return 1
 			},
