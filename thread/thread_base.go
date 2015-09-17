@@ -5,36 +5,39 @@ import (
 	"fmt"
 	"github.com/toophy/pangu/help"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
 
 const (
-	LogLevel   = 1
-	LogBuffMax = 100 * 1024 * 1024
-)
+	LogDebugLevel = 0                // 日志等级 : 调试信息
+	LogInfoLevel  = 1                // 日志等级 : 普通信息
+	LogWarnLevel  = 2                // 日志等级 : 警告信息
+	LogErrorLevel = 3                // 日志等级 : 错误信息
+	LogFatalLevel = 4                // 日志等级 : 致命信息
+	LogMaxLevel   = 5                // 日志最大等级
+	LogLimitLevel = LogInfoLevel     // 显示这个等级之上的日志(控制台)
+	LogBuffMax    = 20 * 1024 * 1024 // 日志缓冲
 
-const (
-	Tid_master = iota
-	Tid_screen_1
-	Tid_screen_2
-	Tid_screen_3
-	Tid_screen_4
-	Tid_screen_5
-	Tid_screen_6
-	Tid_screen_7
-	Tid_screen_8
-	Tid_screen_9
-	Tid_net_1
-	Tid_net_2
-	Tid_net_3
-	Tid_db_1
-	Tid_db_2
-	Tid_db_3
-	Tid_last
-)
+	Tid_world    = iota // 世界线程
+	Tid_screen_1        // 场景线程1
+	Tid_screen_2        // 场景线程2
+	Tid_screen_3        // 场景线程3
+	Tid_screen_4        // 场景线程4
+	Tid_screen_5        // 场景线程5
+	Tid_screen_6        // 场景线程6
+	Tid_screen_7        // 场景线程7
+	Tid_screen_8        // 场景线程8
+	Tid_screen_9        // 场景线程9
+	Tid_net_1           // 网络线程1
+	Tid_net_2           // 网络线程2
+	Tid_net_3           // 网络线程3
+	Tid_db_1            // 数据库线程1
+	Tid_db_2            // 数据库线程2
+	Tid_db_3            // 数据库线程3
+	Tid_last            // 最终线程ID
 
-const (
 	Evt_gap_time  = 16     // 心跳时间(毫秒)
 	Evt_gap_bit   = 4      // 心跳时间对应得移位(快速运算使用)
 	Evt_lay1_time = 160000 // 第一层事件池最大支持时间(毫秒)
@@ -87,6 +90,7 @@ type Thread struct {
 	log_Buffer       []byte                     // 线程日志缓冲
 	log_BufferLen    int                        // 线程日志缓冲长度
 	log_TimeString   string                     // 时间格式(精确到秒2015.08.13 16:33:00)
+	log_Header       [LogMaxLevel]string        // 各级别日志头
 	node_pool        []help.DListNode           // 节点池
 	node_free        help.DListNode             // 自由节点
 	node_preFree     [Tid_last]*help.DListNode  // 预备释放的节点(其他线程释放)
@@ -95,10 +99,10 @@ type Thread struct {
 }
 
 // 初始化线程(必须调用)
-// usage : Init_thread(Tid_master, "主线程", 100)
+// usage : Init_thread(Tid_world, "主线程", 100)
 func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time int64, lay1_time uint64) error {
-	if id < Tid_master || id >= Tid_last {
-		return errors.New("[E] 线程ID超出范围 [Tid_master,Tid_last]")
+	if id < Tid_world || id >= Tid_last {
+		return errors.New("[E] 线程ID超出范围 [Tid_world,Tid_last]")
 	}
 	if self == nil {
 		return errors.New("[E] 线程自身指针不能为nil")
@@ -177,6 +181,9 @@ func (this *Thread) Run_thread() {
 		next_time := time.Duration(this.heart_time)
 		run_time := int64(0)
 
+		this.log_TimeString = time.Now().Format("15:04:05")
+		this.MakeLogHeader()
+
 		this.self.on_first_run()
 
 		//
@@ -189,6 +196,7 @@ func (this *Thread) Run_thread() {
 			time.Sleep(next_time)
 
 			this.log_TimeString = time.Now().Format("15:04:05")
+			this.MakeLogHeader()
 
 			this.last_time = time.Now().UnixNano()
 			this.runThreadMsg()
@@ -308,7 +316,7 @@ func (this *Thread) PostThreadMsg(tid int32, a help.IEvent) bool {
 		this.LogWarn("PostThreadMsg dont post to self")
 		return false
 	}
-	if tid >= Tid_master && tid < Tid_last {
+	if tid >= Tid_world && tid < Tid_last {
 		header := this.evt_threadMsg[tid]
 
 		//n := &help.DListNode{}
@@ -388,13 +396,13 @@ func (this *Thread) sendThreadMsg() {
 		evt := &Event_thread_log{}
 		evt.Init("", 100)
 		evt.Data = string(this.log_Buffer[:this.log_BufferLen])
-		this.PostThreadMsg(Tid_master, evt)
+		this.PostThreadMsg(Tid_world, evt)
 
 		copy(this.log_Buffer[:0], "")
 		this.log_BufferLen = 0
 	}
 
-	for i := int32(Tid_master); i < Tid_last; i++ {
+	for i := int32(Tid_world); i < Tid_last; i++ {
 		if !this.evt_threadMsg[i].IsEmpty() {
 			G_thread_msg_pool.PostMsg(i, this.evt_threadMsg[i])
 		}
@@ -464,58 +472,54 @@ func (this *Thread) PrintAll() {
 	}
 }
 
+// 线程日志 : 生成日志头
+func (this *Thread) MakeLogHeader() {
+	id_str := strconv.Itoa(int(this.Get_thread_id()))
+	this.log_Header[LogDebugLevel] = this.log_TimeString + " [D] " + id_str + " "
+	this.log_Header[LogInfoLevel] = this.log_TimeString + " [I] " + id_str + " "
+	this.log_Header[LogWarnLevel] = this.log_TimeString + " [W] " + id_str + " "
+	this.log_Header[LogErrorLevel] = this.log_TimeString + " [E] " + id_str + " "
+	this.log_Header[LogFatalLevel] = this.log_TimeString + " [F] " + id_str + " "
+}
+
 // 线程日志 : 调试[D]级别日志
 func (this *Thread) LogDebug(f string, v ...interface{}) {
-	info := this.log_TimeString + " [D] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
-	info_len := len(info)
-	copy(this.log_Buffer[this.log_BufferLen:], info)
-	this.log_BufferLen += info_len
-	if LogLevel < 1 {
-		fmt.Print(info)
-	}
+	this.LogBase(LogDebugLevel, fmt.Sprintf(f, v...))
 }
 
 // 线程日志 : 信息[I]级别日志
 func (this *Thread) LogInfo(f string, v ...interface{}) {
-	info := this.log_TimeString + " [I] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
-	info_len := len(info)
-	copy(this.log_Buffer[this.log_BufferLen:], info)
-	this.log_BufferLen += info_len
-	if LogLevel < 2 {
-		fmt.Print(info)
-	}
+	this.LogBase(LogInfoLevel, fmt.Sprintf(f, v...))
 }
 
 // 线程日志 : 警告[W]级别日志
 func (this *Thread) LogWarn(f string, v ...interface{}) {
-	info := this.log_TimeString + " [W] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
-	info_len := len(info)
-	copy(this.log_Buffer[this.log_BufferLen:], info)
-	this.log_BufferLen += info_len
-	if LogLevel < 3 {
-		fmt.Print(info)
-	}
+	this.LogBase(LogWarnLevel, fmt.Sprintf(f, v...))
 }
 
 // 线程日志 : 错误[E]级别日志
 func (this *Thread) LogError(f string, v ...interface{}) {
-	info := this.log_TimeString + " [E] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
-	info_len := len(info)
-	copy(this.log_Buffer[this.log_BufferLen:], info)
-	this.log_BufferLen += info_len
-	if LogLevel < 4 {
-		fmt.Print(info)
-	}
+	this.LogBase(LogErrorLevel, fmt.Sprintf(f, v...))
 }
 
 // 线程日志 : 致命[F]级别日志
 func (this *Thread) LogFatal(f string, v ...interface{}) {
-	info := this.log_TimeString + " [F] " + strconv.Itoa(int(this.Get_thread_id())) + " " + fmt.Sprintf(f, v...) + "\n"
-	info_len := len(info)
-	copy(this.log_Buffer[this.log_BufferLen:], info)
-	this.log_BufferLen += info_len
-	if LogLevel < 5 {
-		fmt.Print(info)
+	this.LogBase(LogFatalLevel, fmt.Sprintf(f, v...))
+}
+
+// 线程日志 : 手动分级日志
+func (this *Thread) LogBase(level int, info string) {
+	if level >= LogDebugLevel && level < LogMaxLevel {
+		s := this.log_Header[level] + info
+		s = strings.Replace(s, "\n", "\n"+this.log_Header[level], -1) + "\n"
+		s_len := len(s)
+		copy(this.log_Buffer[this.log_BufferLen:], s)
+		this.log_BufferLen += s_len
+		if level <= LogLimitLevel {
+			fmt.Print(s)
+		}
+	} else {
+		fmt.Println("LogBase : level failed : ", level)
 	}
 }
 

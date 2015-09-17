@@ -12,3 +12,12 @@ function OnHeartBeat( s)
 	-- print(s:Get_data()["lolo"])
 	-- s:Get_data()["lolo"] = "lolo"..os.time()
 end
+
+function ShowName( t )
+	PrintTable(t)
+	local a = {
+		["name"] = "卧龙山庄",
+	}
+
+	return a
+end

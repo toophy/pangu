@@ -40,3 +40,30 @@ func (this *ScreenThread) Tolua_OnInitScreen() (ret int) {
 
 	return
 }
+
+// 调用Lua函数 : OnInitScreen
+func (this *ScreenThread) Tolua_CommanFunction(m string, f string, t *lua.LTable) (ret *lua.LTable) {
+	// 捕捉异常
+	defer func() {
+		if r := recover(); r != nil {
+			ret = nil
+			this.LogFatal("ScreenThread:Tolua_CommanFunction (" + m + "," + f + ") : " + r.(error).Error())
+		}
+	}()
+
+	// 调用Lua脚本函数
+	if err := this.luaState.CallByParam(lua.P{
+		Fn:      this.luaState.GetFunction(m, f), // 调用的Lua函数
+		NRet:    1,                               // 返回值的数量
+		Protect: true,                            // 保护?
+	}, t); err != nil {
+		panic(err)
+	}
+
+	// 处理Lua脚本函数返回值
+	ret_lua := this.luaState.Get(-1)
+	ret = ret_lua.(*lua.LTable)
+	this.luaState.Pop(1)
+
+	return
+}

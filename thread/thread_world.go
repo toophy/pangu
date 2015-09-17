@@ -45,7 +45,7 @@ func GetWorld() *WorldThread {
 
 // 初始化主线程
 func (this *WorldThread) Init_master_thread(self IThread, name string, heart_time int64, lay1_time uint64) error {
-	err := this.Init_thread(self, Tid_master, name, heart_time, lay1_time)
+	err := this.Init_thread(self, Tid_world, name, heart_time, lay1_time)
 	if err == nil {
 		this.threadCount = 0
 		this.threadIds = make(map[int32]IThread, 0)

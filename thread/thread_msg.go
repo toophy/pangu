@@ -26,7 +26,7 @@ func (this *ThreadMsgPool) Init() {
 
 // 投递线程间消息
 func (this *ThreadMsgPool) PostMsg(tid int32, e *help.DListNode) bool {
-	if e != nil && !e.IsEmpty() && tid >= Tid_master && tid < Tid_last {
+	if e != nil && !e.IsEmpty() && tid >= Tid_world && tid < Tid_last {
 		this.lock[tid].Lock()
 		defer this.lock[tid].Unlock()
 
@@ -52,7 +52,7 @@ func (this *ThreadMsgPool) PostMsg(tid int32, e *help.DListNode) bool {
 
 // 获取线程间消息
 func (this *ThreadMsgPool) GetMsg(tid int32, e *help.DListNode) bool {
-	if e != nil && tid >= Tid_master && tid < Tid_last {
+	if e != nil && tid >= Tid_world && tid < Tid_last {
 		this.lock[tid].Lock()
 		defer this.lock[tid].Unlock()
 
