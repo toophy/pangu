@@ -1,1 +1,1 @@
-go tool pprof pangu.test.exe cprof$1
+go tool pprof ./bin/pangu.exe ./log/pangu_prof.log
