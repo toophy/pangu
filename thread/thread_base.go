@@ -187,7 +187,7 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 		this.log_FileHandle = file
 		this.log_FileHandle.Seek(0, 2)
 		// 第一条日志
-		this.LogDebug("\n盘古游戏服务器启动\n")
+		this.LogDebug("\n          盘古游戏服务器启动\n")
 	}
 
 	return nil

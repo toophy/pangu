@@ -73,7 +73,6 @@ func (this *ScreenThread) on_first_run() {
 	}
 
 	this.Tolua_CommanFunction("main", "OnScreenThreadBegin", nil)
-	this.Tolua_OnInitScreen()
 }
 
 // 响应线程退出

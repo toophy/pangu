@@ -14,33 +14,6 @@ func (this *WorldThread) GetLUserData(n string, a interface{}) *lua.LUserData {
 	return ud
 }
 
-// 调用Lua函数 : OnInitWorld
-func (this *WorldThread) Tolua_OnInitWorld() (ret int) {
-	// 捕捉异常
-	defer func() {
-		if r := recover(); r != nil {
-			ret = -1
-			this.LogFatal("Tolua_OnInitWorld : " + r.(error).Error())
-		}
-	}()
-
-	// 调用Lua脚本函数
-	if err := this.luaState.CallByParam(lua.P{
-		Fn:      this.luaState.GetFunction("main", "OnInitWorld"), // 调用的Lua函数
-		NRet:    1,                                                // 返回值的数量
-		Protect: true,                                             // 保护?
-	}); err != nil {
-		panic(err)
-	}
-
-	// 处理Lua脚本函数返回值
-	ret_lua := this.luaState.Get(-1)
-	ret = int(ret_lua.(lua.LNumber))
-	this.luaState.Pop(1)
-
-	return
-}
-
 // 调用Lua函数 : 调用Lua函数
 func (this *WorldThread) Tolua_CommanFunction(m string, f string, t *lua.LTable) (ret lua.LValue) {
 	// 捕捉异常

@@ -48,15 +48,6 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 	evt.Screen_ = this
 	this.thread.PostEvent(evt)
 
-	var tt lua.LTable
-	tt.Insert(1, lua.LString("xxoo"))
-	tt.Insert(2, lua.LString("xxoo2"))
-	tt.Insert(3, lua.LString("xxoo3"))
-	tt.RawSetH(lua.LString("name1"), lua.LString("场景1"))
-	tt.RawSetH(lua.LString("name2"), lua.LString("场景2"))
-	tt.RawSetH(lua.LString("name3"), lua.LString("场景3"))
-	this.Get_thread().Tolua_CommanFunction("woLongShanZhuang", "ShowName", &tt)
-
 	return true
 }
 
