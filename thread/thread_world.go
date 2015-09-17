@@ -51,6 +51,18 @@ func (this *WorldThread) Init_master_thread(self IThread, name string, heart_tim
 	return err
 }
 
+// 检查线程是否已经存在
+func (this *WorldThread) Can_create_thread(tid int32) bool {
+	this.threadLock.Lock()
+	defer this.threadLock.Unlock()
+
+	if _, ok := this.threadIds[tid]; ok == false {
+		return true
+	}
+
+	return false
+}
+
 // 增加运行的线程
 func (this *WorldThread) Add_run_thread(a IThread) {
 	this.threadLock.Lock()
@@ -104,38 +116,6 @@ func (this *WorldThread) on_first_run() {
 	}
 
 	this.Tolua_CommanFunction("main", "OnWorldBegin", nil)
-
-	sc1, err := New_screen_thread(Tid_screen_1, "场景线程1", 100, Evt_lay1_time)
-	if err == nil && sc1 != nil {
-		sc1.Run_thread()
-	} else {
-		if err != nil {
-			this.LogError("新建场景线程1失败:" + err.Error())
-		} else {
-			this.LogError("新建场景线程1失败:")
-		}
-	}
-
-	evt1 := &Event_close_thread{}
-	evt1.Init("", 10000)
-	evt1.Master = sc1
-	this.PostEvent(evt1)
-
-	sc2, err := New_screen_thread(Tid_screen_2, "场景线程2", 100, Evt_lay1_time)
-	if err == nil && sc2 != nil {
-		sc2.Run_thread()
-	} else {
-		if err != nil {
-			this.LogError("新建场景线程2失败:" + err.Error())
-		} else {
-			this.LogError("新建场景线程2失败:")
-		}
-	}
-
-	evt2 := &Event_close_thread{}
-	evt2.Init("", 10000)
-	evt2.Master = sc2
-	this.PostEvent(evt2)
 }
 
 // 响应线程退出
@@ -174,6 +154,36 @@ func (this *WorldThread) ReloadLuaState() error {
 
 	// 加载所有 screens 文件夹里面的 *.lua 文件
 	this.luaState.RequireDir("data/world")
+
+	return nil
+}
+
+// 新建场景线程
+func (this *WorldThread) CreateScreenThread(id int32, name string, heart_time int64, lay1_time uint64, close_time uint64) *ScreenThread {
+
+	if this.Can_create_thread(id) {
+
+		s, err := New_screen_thread(id, name, heart_time, lay1_time)
+		if err == nil && s != nil {
+			s.Run_thread()
+		} else {
+			if err != nil {
+				this.LogError("新建" + name + "失败:" + err.Error())
+			} else {
+				this.LogError("新建" + name + "失败:")
+			}
+			return s
+		}
+
+		if close_time > 0 {
+			evt1 := &Event_close_thread{}
+			evt1.Init("", close_time)
+			evt1.Master = s
+			this.PostEvent(evt1)
+		}
+
+		return s
+	}
 
 	return nil
 }

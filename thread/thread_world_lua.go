@@ -92,6 +92,22 @@ func regLua_world_thread(struct_name string, L *lua.LState) error {
 				p.LogFatal(data)
 				return 1
 			},
+
+			// CreateScreenThread
+			"CreateScreenThread": func(L *lua.LState) int {
+				p := check(L)
+				id := int32(L.CheckInt(2))
+				name := L.CheckString(3)
+				heart_time := L.CheckInt64(4)
+				lay1_time := uint64(L.CheckInt64(5))
+				close_time := uint64(L.CheckInt64(6))
+
+				ret := p.CreateScreenThread(id, name, heart_time, lay1_time, close_time)
+
+				L.Push(p.GetLUserData("ScreenThread", ret))
+
+				return 1
+			},
 		}))
 
 	return nil
