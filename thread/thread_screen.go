@@ -15,6 +15,7 @@ type ScreenThread struct {
 	lastScreenId int32       // 最后一个场景id
 	screens      ScreenMap   // screen 列表
 	luaState     *lua.LState // Lua实体
+	luaNilTable  lua.LTable  // Lua空的Table, 供默认参数使用
 }
 
 // 新建场景线程
@@ -71,11 +72,13 @@ func (this *ScreenThread) on_first_run() {
 		return
 	}
 
+	this.Tolua_CommanFunction("main", "OnScreenThreadBegin", nil)
 	this.Tolua_OnInitScreen()
 }
 
 // 响应线程退出
 func (this *ScreenThread) on_end() {
+	this.Tolua_CommanFunction("main", "OnScreenThreadEnd", nil)
 	if this.luaState != nil {
 		this.luaState.Close()
 		this.luaState = nil

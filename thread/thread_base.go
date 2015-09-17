@@ -1,12 +1,13 @@
 package thread
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/toophy/pangu/help"
+	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -19,7 +20,9 @@ const (
 	LogMaxLevel   = 5                // 日志最大等级
 	LogLimitLevel = LogInfoLevel     // 显示这个等级之上的日志(控制台)
 	LogBuffMax    = 20 * 1024 * 1024 // 日志缓冲
+)
 
+const (
 	Tid_world    = iota // 世界线程
 	Tid_screen_1        // 场景线程1
 	Tid_screen_2        // 场景线程2
@@ -37,7 +40,9 @@ const (
 	Tid_db_2            // 数据库线程2
 	Tid_db_3            // 数据库线程3
 	Tid_last            // 最终线程ID
+)
 
+const (
 	Evt_gap_time  = 16     // 心跳时间(毫秒)
 	Evt_gap_bit   = 4      // 心跳时间对应得移位(快速运算使用)
 	Evt_lay1_time = 160000 // 第一层事件池最大支持时间(毫秒)
@@ -87,15 +92,16 @@ type Thread struct {
 	evt_lastRunCount uint64                     // 最近一次运行次数
 	evt_currRunCount uint64                     // 当前运行次数
 	evt_threadMsg    [Tid_last]*help.DListNode  // 保存将要发给其他线程的事件(消息)
+	node_pool        []help.DListNode           // 节点池
+	node_free        help.DListNode             // 自由节点
+	node_preFree     [Tid_last]*help.DListNode  // 预备释放的节点(其他线程释放)
+	node_alloc_count int                        // 节点分配数量
 	log_Buffer       []byte                     // 线程日志缓冲
 	log_BufferLen    int                        // 线程日志缓冲长度
 	log_TimeString   string                     // 时间格式(精确到秒2015.08.13 16:33:00)
 	log_Header       [LogMaxLevel]string        // 各级别日志头
-	node_pool        []help.DListNode           // 节点池
-	node_free        help.DListNode             // 自由节点
-	node_preFree     [Tid_last]*help.DListNode  // 预备释放的节点(其他线程释放)
-	node_alloc_count int
-	event_pool       sync.Pool
+	log_FileBuff     bytes.Buffer               // 日志总缓冲, Tid_world才会使用
+	log_FileHandle   *os.File                   // 日志文件, Tid_world才会使用
 }
 
 // 初始化线程(必须调用)
@@ -144,11 +150,7 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 		this.evt_threadMsg[i].Init(nil)
 	}
 
-	this.log_Buffer = make([]byte, LogBuffMax)
-	this.log_BufferLen = 0
-
-	this.log_TimeString = time.Now().Format("15:04:05")
-
+	// 节点初始化
 	this.node_free.Init(nil)
 	this.node_free.SrcTid = this.id
 
@@ -163,6 +165,29 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 		this.node_preFree[i] = new(help.DListNode)
 		this.node_preFree[i].Init(nil)
 		this.node_preFree[i].SrcTid = this.id
+	}
+
+	// 日志初始化
+	this.log_Buffer = make([]byte, LogBuffMax)
+	this.log_BufferLen = 0
+
+	this.log_TimeString = time.Now().Format("15:04:05")
+	this.MakeLogHeader()
+
+	if this.is_world_thread() {
+		this.log_FileBuff.Grow(LogBuffSize)
+
+		if !help.IsExist(LogFileName) {
+			os.Create(LogFileName)
+		}
+		file, err := os.OpenFile(LogFileName, os.O_RDWR, os.ModePerm)
+		if err != nil {
+			return err
+		}
+		this.log_FileHandle = file
+		this.log_FileHandle.Seek(0, 2)
+		// 第一条日志
+		this.LogDebug("\n盘古游戏服务器启动\n")
 	}
 
 	return nil
@@ -184,6 +209,13 @@ func (this *Thread) Run_thread() {
 		this.log_TimeString = time.Now().Format("15:04:05")
 		this.MakeLogHeader()
 
+		// 处理文件
+		if this.is_world_thread() {
+			evt := &Event_flush_log{}
+			evt.Init("", 300)
+			this.PostEvent(evt)
+		}
+
 		this.self.on_first_run()
 
 		//
@@ -201,7 +233,6 @@ func (this *Thread) Run_thread() {
 			this.last_time = time.Now().UnixNano()
 			this.runThreadMsg()
 			this.runEvents()
-			this.runOnce()
 			this.self.on_run()
 
 			this.sendThreadMsg()
@@ -219,19 +250,15 @@ func (this *Thread) Run_thread() {
 			if this.pre_stop {
 				// 是否有需要释放的对象?
 				this.self.on_end()
+				if this.is_world_thread() {
+					this.log_FileHandle.Close()
+				}
 				break
 			}
 		}
 
 		GetWorld().Release_run_thread(this.self)
 	}()
-}
-
-// 运行一次(核心流程)
-func (this *Thread) runOnce() {
-	// 计算心跳误差值, 决定心跳滴答(小数), heart_time, last_time, heart_rate
-	// 处理线程间接收消息, 分配到水表定时器
-	// 执行水表定时器
 }
 
 // 返回线程编号
@@ -242,6 +269,11 @@ func (this *Thread) Get_thread_id() int32 {
 // 返回线程名称
 func (this *Thread) Get_thread_name() string {
 	return this.name
+}
+
+// 是世界线程
+func (this *Thread) is_world_thread() bool {
+	return this.id == Tid_world
 }
 
 // 预备关闭线程
@@ -392,7 +424,7 @@ func (this *Thread) runThreadMsg() {
 func (this *Thread) sendThreadMsg() {
 
 	// 发送日志到日志线程
-	if this.log_BufferLen > 0 {
+	if !this.is_world_thread() && this.log_BufferLen > 0 {
 		evt := &Event_thread_log{}
 		evt.Init("", 100)
 		evt.Data = string(this.log_Buffer[:this.log_BufferLen])
@@ -512,14 +544,35 @@ func (this *Thread) LogBase(level int, info string) {
 	if level >= LogDebugLevel && level < LogMaxLevel {
 		s := this.log_Header[level] + info
 		s = strings.Replace(s, "\n", "\n"+this.log_Header[level], -1) + "\n"
-		s_len := len(s)
-		copy(this.log_Buffer[this.log_BufferLen:], s)
-		this.log_BufferLen += s_len
-		if level <= LogLimitLevel {
+
+		if this.is_world_thread() {
+			this.Add_log(s)
+		} else {
+			s_len := len(s)
+			copy(this.log_Buffer[this.log_BufferLen:], s)
+			this.log_BufferLen += s_len
+		}
+
+		if level >= LogLimitLevel {
 			fmt.Print(s)
 		}
 	} else {
 		fmt.Println("LogBase : level failed : ", level)
+	}
+}
+
+// 增加日志到缓冲
+func (this *Thread) Add_log(d string) {
+	if this.is_world_thread() {
+		this.log_FileBuff.WriteString(d)
+	}
+}
+
+// 刷新缓冲日志到文件
+func (this *Thread) Flush_log() {
+	if this.is_world_thread() && this.log_FileBuff.Len() > 0 {
+		this.log_FileHandle.Write(this.log_FileBuff.Bytes())
+		this.log_FileBuff.Reset()
 	}
 }
 

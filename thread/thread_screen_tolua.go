@@ -41,8 +41,8 @@ func (this *ScreenThread) Tolua_OnInitScreen() (ret int) {
 	return
 }
 
-// 调用Lua函数 : OnInitScreen
-func (this *ScreenThread) Tolua_CommanFunction(m string, f string, t *lua.LTable) (ret *lua.LTable) {
+// 调用Lua函数 : 调用Lua函数
+func (this *ScreenThread) Tolua_CommanFunction(m string, f string, t *lua.LTable) (ret lua.LValue) {
 	// 捕捉异常
 	defer func() {
 		if r := recover(); r != nil {
@@ -50,6 +50,10 @@ func (this *ScreenThread) Tolua_CommanFunction(m string, f string, t *lua.LTable
 			this.LogFatal("ScreenThread:Tolua_CommanFunction (" + m + "," + f + ") : " + r.(error).Error())
 		}
 	}()
+
+	if t == nil {
+		t = &this.luaNilTable
+	}
 
 	// 调用Lua脚本函数
 	if err := this.luaState.CallByParam(lua.P{
@@ -61,9 +65,7 @@ func (this *ScreenThread) Tolua_CommanFunction(m string, f string, t *lua.LTable
 	}
 
 	// 处理Lua脚本函数返回值
-	ret_lua := this.luaState.Get(-1)
-	ret = ret_lua.(*lua.LTable)
+	ret = this.luaState.Get(-1)
 	this.luaState.Pop(1)
-
 	return
 }
