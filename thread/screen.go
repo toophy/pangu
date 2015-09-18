@@ -43,11 +43,6 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 	t.LogInfo("场景%s加载成功", this.Name)
 	this.Tolua_screen_init()
 
-	evt := &Event_heart_beat{}
-	evt.Init("", 3000)
-	evt.Screen_ = this
-	this.thread.PostEvent(evt)
-
 	return true
 }
 
