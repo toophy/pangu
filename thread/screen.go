@@ -103,7 +103,10 @@ func (this *Screen) PostEvent(f string, t uint64, p lua.LValue) bool {
 	evt.module = this.ModName
 	evt.function = f
 	evt.param = p
-	return this.thread.PostEvent(evt)
+	if this.thread.PostEvent(evt) {
+		this.AddEvent(evt)
+	}
+	return false
 }
 
 // 登录地图
