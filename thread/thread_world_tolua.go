@@ -14,13 +14,34 @@ func (this *WorldThread) GetLUserData(n string, a interface{}) *lua.LUserData {
 	return ud
 }
 
-// 调用Lua函数 : 调用Lua函数
-func (this *WorldThread) Tolua_CommanFunction(m string, f string, t lua.LValue) (ret lua.LValue) {
+// 调用Lua函数 : 没有参数, 没有返回值
+func (this *WorldThread) Tolua_Common(m string, f string) {
+	// 捕捉异常
+	defer func() {
+		if r := recover(); r != nil {
+			this.LogFatal("WorldThread:Tolua_Common (" + m + "," + f + ") : " + r.(error).Error())
+		}
+	}()
+
+	// 调用Lua脚本函数
+	if err := this.luaState.CallByParam(lua.P{
+		Fn:      this.luaState.GetFunction(m, f), // 调用的Lua函数
+		NRet:    0,                               // 返回值的数量
+		Protect: true,                            // 保护?
+	}); err != nil {
+		panic(err)
+	}
+
+	return
+}
+
+// 调用Lua函数 : 有参数, 有返回值
+func (this *WorldThread) Tolua_Common_Param_Ret(m string, f string, t lua.LValue) (ret lua.LValue) {
 	// 捕捉异常
 	defer func() {
 		if r := recover(); r != nil {
 			ret = nil
-			this.LogFatal("WorldThread:Tolua_CommanFunction (" + m + "," + f + ") : " + r.(error).Error())
+			this.LogFatal("WorldThread:Tolua_Common_Param_Ret (" + m + "," + f + ") : " + r.(error).Error())
 		}
 	}()
 
@@ -43,12 +64,12 @@ func (this *WorldThread) Tolua_CommanFunction(m string, f string, t lua.LValue) 
 	return
 }
 
-// 调用Lua函数 : 调用Lua函数
-func (this *WorldThread) Tolua_CommanFunction_NoRet(m string, f string, t lua.LValue) {
+// 调用Lua函数 : 只有参数
+func (this *WorldThread) Tolua_Common_Param(m string, f string, t lua.LValue) {
 	// 捕捉异常
 	defer func() {
 		if r := recover(); r != nil {
-			this.LogFatal("WorldThread:Tolua_CommanFunction_NoRet (" + m + "," + f + ") : " + r.(error).Error())
+			this.LogFatal("WorldThread:Tolua_Common_Param (" + m + "," + f + ") : " + r.(error).Error())
 		}
 	}()
 
@@ -59,7 +80,7 @@ func (this *WorldThread) Tolua_CommanFunction_NoRet(m string, f string, t lua.LV
 	// 调用Lua脚本函数
 	if err := this.luaState.CallByParam(lua.P{
 		Fn:      this.luaState.GetFunction(m, f), // 调用的Lua函数
-		NRet:    1,                               // 返回值的数量
+		NRet:    0,                               // 返回值的数量
 		Protect: true,                            // 保护?
 	}, t); err != nil {
 		panic(err)

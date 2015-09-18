@@ -116,7 +116,7 @@ end
 
 
 -- 根据模块名获得脚本模块
-function GetScriptModule(ModuleName)
+function Mod(ModuleName)
   return package.loaded[ModuleName]
 end
 

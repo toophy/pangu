@@ -115,12 +115,12 @@ func (this *WorldThread) on_first_run() {
 		panic(errInit.Error())
 	}
 
-	this.Tolua_CommanFunction("main", "OnWorldBegin", nil)
+	this.Tolua_Common("main", "OnWorldBegin")
 }
 
 // 响应线程退出
 func (this *WorldThread) on_end() {
-	this.Tolua_CommanFunction("main", "OnWorldEnd", nil)
+	this.Tolua_Common("main", "OnWorldEnd")
 	if this.luaState != nil {
 		this.luaState.Close()
 		this.luaState = nil

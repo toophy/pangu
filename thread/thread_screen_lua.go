@@ -64,6 +64,15 @@ func regLua_screen_thread(struct_name string, L *lua.LState) error {
 				return 1
 			},
 
+			// 获取场景
+			"Get_screen": func(L *lua.LState) int {
+				p := check(L)
+				id := int32(L.CheckInt(2))
+				ret := p.Get_screen(id)
+				L.Push(p.GetLUserData("Screen", ret))
+				return 1
+			},
+
 			// 获取线程号
 			"Get_thread_id": func(L *lua.LState) int {
 				p := check(L)

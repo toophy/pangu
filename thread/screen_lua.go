@@ -47,19 +47,40 @@ func regLua_screen(struct_name string, L *lua.LState) error {
 
 			"Get_data": func(L *lua.LState) int {
 				p := check(L)
-
 				ret := p.Get_data()
-
 				L.Push(ret)
 				return 1
 			},
 
-			"Get_thread": func(L *lua.LState) int {
+			"Get_name": func(L *lua.LState) int {
 				p := check(L)
+				ret := p.Get_name()
+				L.Push(lua.LString(ret))
+				return 1
+			},
 
-				ret := L.GetUserData("ScreenThread", p.Get_thread())
+			"Get_id": func(L *lua.LState) int {
+				p := check(L)
+				ret := p.Get_id()
+				L.Push(lua.LNumber(ret))
+				return 1
+			},
 
-				L.Push(ret)
+			"Get_oid": func(L *lua.LState) int {
+				p := check(L)
+				ret := p.Get_oid()
+				L.Push(lua.LNumber(ret))
+				return 1
+			},
+
+			// lua投递事件
+			"PostEvent": func(L *lua.LState) int {
+				p := check(L)
+				f := L.CheckString(2)
+				t := uint64(L.CheckInt64(3))
+				param := L.CheckAny(4)
+				ret := p.PostEvent(f, t, param)
+				L.Push(lua.LBool(ret))
 				return 1
 			},
 		}))

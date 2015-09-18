@@ -14,13 +14,34 @@ func (this *ScreenThread) GetLUserData(n string, a interface{}) *lua.LUserData {
 	return ud
 }
 
-// 调用Lua函数 : 调用Lua函数
-func (this *ScreenThread) Tolua_CommanFunction(m string, f string, t lua.LValue) (ret lua.LValue) {
+// 调用Lua函数 : 没有参数, 没有返回值
+func (this *ScreenThread) Tolua_Common(m string, f string) {
+	// 捕捉异常
+	defer func() {
+		if r := recover(); r != nil {
+			this.LogFatal("ScreenThread:Tolua_Common (" + m + "," + f + ") : " + r.(error).Error())
+		}
+	}()
+
+	// 调用Lua脚本函数
+	if err := this.luaState.CallByParam(lua.P{
+		Fn:      this.luaState.GetFunction(m, f), // 调用的Lua函数
+		NRet:    0,                               // 返回值的数量
+		Protect: true,                            // 保护?
+	}); err != nil {
+		panic(err)
+	}
+
+	return
+}
+
+// 调用Lua函数 : 有参数, 有返回值
+func (this *ScreenThread) Tolua_Common_Param_Ret(m string, f string, t lua.LValue) (ret lua.LValue) {
 	// 捕捉异常
 	defer func() {
 		if r := recover(); r != nil {
 			ret = nil
-			this.LogFatal("ScreenThread:Tolua_CommanFunction (" + m + "," + f + ") : " + r.(error).Error())
+			this.LogFatal("ScreenThread:Tolua_Common_Param_Ret (" + m + "," + f + ") : " + r.(error).Error())
 		}
 	}()
 
@@ -43,12 +64,12 @@ func (this *ScreenThread) Tolua_CommanFunction(m string, f string, t lua.LValue)
 	return
 }
 
-// 调用Lua函数 : 调用Lua函数
-func (this *ScreenThread) Tolua_CommanFunction_NoRet(m string, f string, t lua.LValue) {
+// 调用Lua函数 : 只有参数
+func (this *ScreenThread) Tolua_Common_Param(m string, f string, t lua.LValue) {
 	// 捕捉异常
 	defer func() {
 		if r := recover(); r != nil {
-			this.LogFatal("ScreenThread:Tolua_CommanFunction_NoRet (" + m + "," + f + ") : " + r.(error).Error())
+			this.LogFatal("ScreenThread:Tolua_Common_Param (" + m + "," + f + ") : " + r.(error).Error())
 		}
 	}()
 
@@ -59,9 +80,39 @@ func (this *ScreenThread) Tolua_CommanFunction_NoRet(m string, f string, t lua.L
 	// 调用Lua脚本函数
 	if err := this.luaState.CallByParam(lua.P{
 		Fn:      this.luaState.GetFunction(m, f), // 调用的Lua函数
-		NRet:    1,                               // 返回值的数量
+		NRet:    0,                               // 返回值的数量
 		Protect: true,                            // 保护?
 	}, t); err != nil {
+		panic(err)
+	}
+
+	return
+}
+
+// 调用Lua函数 : screen专用版本, 只有参数
+func (this *ScreenThread) Tolua_Common_Screen_Param(m string, f string, t lua.LValue, sid int32) {
+	// 捕捉异常
+	defer func() {
+		if r := recover(); r != nil {
+			this.LogFatal("ScreenThread:Tolua_Common_Screen_Param (" + m + "," + f + ") : " + r.(error).Error())
+		}
+	}()
+
+	s := this.Get_screen(sid)
+	if s == nil {
+		return
+	}
+
+	if t == nil {
+		t = &this.luaNilTable
+	}
+
+	// 调用Lua脚本函数
+	if err := this.luaState.CallByParam(lua.P{
+		Fn:      this.luaState.GetFunction(m, f), // 调用的Lua函数
+		NRet:    0,                               // 返回值的数量
+		Protect: true,                            // 保护?
+	}, this.GetLUserData("Screen", s), t); err != nil {
 		panic(err)
 	}
 

@@ -3,8 +3,28 @@ package thread
 import (
 	_ "bytes"
 	"fmt"
+	lua "github.com/toophy/gopher-lua"
 	"github.com/toophy/pangu/help"
 )
+
+// 事件 : lua使用的通用事件
+type Event_from_lua_screen struct {
+	help.Evt_base
+	sid      int32      // 场景ID
+	module   string     // lua模块名
+	function string     // lua函数名
+	param    lua.LValue // 参数(table)
+}
+
+// 事件执行
+func (this *Event_from_lua_screen) Exec(home interface{}) bool {
+	// 当前线程调用-> 执行这个事件
+	switch home.(type) {
+	case *ScreenThread:
+		home.(*ScreenThread).Tolua_Common_Screen_Param(this.module, this.function, this.param, this.sid)
+	}
+	return true
+}
 
 // func (this *Event_heart_beat) SayHello(home interface{}) {
 // 	evt := &Event_thread_hello{SrcThread: this.Screen_.Get_thread().Get_thread_id(), Chat: /*help.RandStr(5)*/ "nimei", Replay: false}

@@ -1,20 +1,26 @@
 module("woLongShanZhuang", package.seeall)
 
+-- local 
 function OnInit(s)
 	print("欢迎来到卧龙山庄.")
 	-- s:Get_data()["lolo"] = "lolo"
 	-- print(s:Get_data()["lolo"])
-	ts:PostEventFromLua("woLongShanZhuang","OnHeartBeat",1000,{})
-	ts:PostEventFromLua("woLongShanZhuang","Eon_Qiguan",10000,{["log"]="咕咕鸟在鸣叫!"})
+	s:PostEvent("OnHeartBeat",5000,{})
+	s:PostEvent("Eon_Qiguan",10000,{["log"]="咕咕鸟在鸣叫!"})
+
+	LogInfo(s:Get_name())
+	LogInfo("id="..s:Get_id()..",oid="..s:Get_oid())
 end
 
-function OnHeartBeat(s)
-	LogInfo("卧龙山庄心跳 "..os.time())
-	ts:PostEventFromLua("woLongShanZhuang","OnHeartBeat",1000,{})
+-- local 
+function OnHeartBeat(s,t)
+	LogInfo(s:Get_name().."心跳 "..os.time())
+	s:PostEvent("OnHeartBeat",5000,{})
 	-- print(s:Get_data()["lolo"])
 	-- s:Get_data()["lolo"] = "lolo"..os.time()
 end
 
-function Eon_Qiguan(t)
+-- local 
+function Eon_Qiguan(s,t)
 	LogInfo(t["log"])
 end

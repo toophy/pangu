@@ -10,6 +10,7 @@ import (
 type Screen struct {
 	help.EventObj
 	Name    string
+	ModName string
 	Id      int32
 	Oid     int32
 	Actors  map[int64]*actor.Actor
@@ -34,6 +35,8 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 	} else {
 		this.Name = config.Name
 	}
+
+	this.ModName = config.ModName
 
 	this.Id = id
 	this.Oid = oid
@@ -62,6 +65,26 @@ func (this *Screen) Get_data() lua.LValue {
 	return this.luaData
 }
 
+// 获取场景名称
+func (this *Screen) Get_name() string {
+	return this.Name
+}
+
+// 获取模块(Lua)名称
+func (this *Screen) Get_mod_name() string {
+	return this.ModName
+}
+
+// 获取场景ID
+func (this *Screen) Get_id() int32 {
+	return this.Id
+}
+
+// 获取场景模板ID
+func (this *Screen) Get_oid() int32 {
+	return this.Oid
+}
+
 // !!! 获取的指针不能保存, 获取场景配置
 func (this *Screen) Get_config() *Config {
 	return screen_config.GetScreenConfig(this.Oid)
@@ -70,6 +93,17 @@ func (this *Screen) Get_config() *Config {
 // 获取所在线程
 func (this *Screen) Get_thread() *ScreenThread {
 	return this.thread
+}
+
+// 投递事件
+func (this *Screen) PostEvent(f string, t uint64, p lua.LValue) bool {
+	evt := &Event_from_lua_screen{}
+	evt.Init("", t)
+	evt.sid = this.Get_id()
+	evt.module = this.ModName
+	evt.function = f
+	evt.param = p
+	return this.thread.PostEvent(evt)
 }
 
 // 登录地图

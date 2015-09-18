@@ -36,7 +36,7 @@ func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time i
 	err := this.Init_thread(this, id, name, heart_time, lay1_time)
 	if err == nil {
 		this.screens = make(ScreenMap, 0)
-		this.lastScreenId = (id - 1) * 10000
+		this.lastScreenId = (id - 1) * 1000000
 		return nil
 	}
 	return err
@@ -45,7 +45,10 @@ func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time i
 // 增加场景
 func (this *ScreenThread) Add_screen(name string, oid int32) bool {
 	a := new(Screen)
-	a.Load(name, this.lastScreenId, 1, this)
+	if !a.Load(name, this.lastScreenId, oid, this) {
+		return false
+	}
+
 	this.screens[this.lastScreenId] = a
 
 	this.lastScreenId++
@@ -63,6 +66,14 @@ func (this *ScreenThread) Del_screen(id int32) bool {
 	return false
 }
 
+// 获取场景
+func (this *ScreenThread) Get_screen(id int32) *Screen {
+	if _, ok := this.screens[id]; ok {
+		return this.screens[id]
+	}
+	return nil
+}
+
 // 响应线程首次运行
 func (this *ScreenThread) on_first_run() {
 
@@ -72,12 +83,12 @@ func (this *ScreenThread) on_first_run() {
 		return
 	}
 
-	this.Tolua_CommanFunction("main", "OnScreenThreadBegin", nil)
+	this.Tolua_Common("main", "OnScreenThreadBegin")
 }
 
 // 响应线程退出
 func (this *ScreenThread) on_end() {
-	this.Tolua_CommanFunction("main", "OnScreenThreadEnd", nil)
+	this.Tolua_Common("main", "OnScreenThreadEnd")
 	if this.luaState != nil {
 		this.luaState.Close()
 		this.luaState = nil

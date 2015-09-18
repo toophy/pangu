@@ -46,9 +46,9 @@ func (this *Event_from_lua) Exec(home interface{}) bool {
 	// 当前线程调用-> 执行这个事件
 	switch home.(type) {
 	case *ScreenThread:
-		home.(*ScreenThread).Tolua_CommanFunction_NoRet(this.module, this.function, this.param)
+		home.(*ScreenThread).Tolua_Common_Param(this.module, this.function, this.param)
 	case *WorldThread:
-		home.(*WorldThread).Tolua_CommanFunction_NoRet(this.module, this.function, this.param)
+		home.(*WorldThread).Tolua_Common_Param(this.module, this.function, this.param)
 	}
 	return true
 }
