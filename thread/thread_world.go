@@ -187,3 +187,13 @@ func (this *WorldThread) CreateScreenThread(id int32, name string, heart_time in
 
 	return nil
 }
+
+// lua投递事件
+func (this *WorldThread) PostEventFromLua(m string, f string, t uint64, p lua.LValue) bool {
+	evt := &Event_from_lua{}
+	evt.Init("", t)
+	evt.module = m
+	evt.function = f
+	evt.param = p
+	return this.PostEvent(evt)
+}

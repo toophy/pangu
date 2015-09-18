@@ -120,3 +120,13 @@ func (this *ScreenThread) reloadLuaState() error {
 func (this *ScreenThread) GetLuaState() *lua.LState {
 	return this.luaState
 }
+
+// lua投递事件
+func (this *ScreenThread) PostEventFromLua(m string, f string, t uint64, p lua.LValue) bool {
+	evt := &Event_from_lua{}
+	evt.Init("", t)
+	evt.module = m
+	evt.function = f
+	evt.param = p
+	return this.PostEvent(evt)
+}

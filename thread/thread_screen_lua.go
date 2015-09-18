@@ -72,6 +72,18 @@ func regLua_screen_thread(struct_name string, L *lua.LState) error {
 				return 1
 			},
 
+			// lua投递事件
+			"PostEventFromLua": func(L *lua.LState) int {
+				p := check(L)
+				m := L.CheckString(2)
+				f := L.CheckString(3)
+				t := uint64(L.CheckInt64(4))
+				param := L.CheckAny(5)
+				ret := p.PostEventFromLua(m, f, t, param)
+				L.Push(lua.LBool(ret))
+				return 1
+			},
+
 			// LogDebug
 			"LogDebug": func(L *lua.LState) int {
 				p := check(L)
