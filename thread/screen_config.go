@@ -1,5 +1,12 @@
 package thread
 
+import (
+	"encoding/csv"
+	"fmt"
+	"os"
+	"strconv"
+)
+
 type Config struct {
 	Name    string
 	ModName string
@@ -14,12 +21,36 @@ type ScreensConfig struct {
 var screen_config ScreensConfig
 
 func init() {
-	screen_config.LoadScreenConfig("./data/screen_list.txt")
+	screen_config.LoadScreenConfig("./data/screens/screen_list.txt")
 }
 
-func (this *ScreensConfig) LoadScreenConfig(f string) bool {
-	this.config = make(map[int32]*Config)
-	this.config[1] = &Config{Name: "卧龙山庄", ModName: "woLongShanZhuang", Width: 100, Height: 100}
+func (this *ScreensConfig) LoadScreenConfig(name string) bool {
+
+	f, err := os.Open(name)
+	if err != nil {
+		println(err.Error())
+		return false
+	}
+	defer f.Close()
+
+	r := csv.NewReader(f)
+	r.Comma = '\t'
+	r.TrimLeadingSpace = true
+
+	d, err2 := r.ReadAll()
+	if err2 != nil {
+		println(err2.Error())
+	} else {
+		this.config = make(map[int32]*Config)
+		for i, _ := range d {
+			if i > 0 {
+				id, _ := strconv.Atoi(d[i][0])
+				w, _ := strconv.Atoi(d[i][3])
+				h, _ := strconv.Atoi(d[i][4])
+				this.config[int32(id)] = &Config{Name: d[i][1], ModName: d[i][2], Width: int32(w), Height: int32(h)}
+			}
+		}
+	}
 	return true
 }
 
