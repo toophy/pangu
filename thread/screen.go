@@ -4,6 +4,7 @@ import (
 	"fmt"
 	lua "github.com/toophy/gopher-lua"
 	"github.com/toophy/pangu/actor"
+	"github.com/toophy/pangu/config"
 	"github.com/toophy/pangu/help"
 )
 
@@ -24,8 +25,8 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 		return false
 	}
 	this.InitEventHeader()
-	config := screen_config.GetScreenConfig(oid)
-	if config == nil {
+	cfg := config.GScreens.GetScreenConfig(oid)
+	if cfg == nil {
 		t.LogError("场景%s加载失败: 没有找到场景模板(%d)", name, oid)
 		return false
 	}
@@ -33,10 +34,10 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 	if len(name) > 0 {
 		this.Name = name
 	} else {
-		this.Name = config.Name
+		this.Name = cfg.Name
 	}
 
-	this.ModName = config.ModName
+	this.ModName = cfg.ModName
 
 	this.Id = id
 	this.Oid = oid
@@ -86,8 +87,8 @@ func (this *Screen) Get_oid() int32 {
 }
 
 // !!! 获取的指针不能保存, 获取场景配置
-func (this *Screen) Get_config() *Config {
-	return screen_config.GetScreenConfig(this.Oid)
+func (this *Screen) Get_config() *config.ScreenConfig {
+	return config.GScreens.GetScreenConfig(this.Oid)
 }
 
 // 获取所在线程
