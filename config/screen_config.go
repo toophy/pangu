@@ -1,9 +1,10 @@
 package config
 
 import (
-	"encoding/csv"
+	"fmt"
+	"github.com/toophy/csv"
+	"io/ioutil"
 	"os"
-	"strconv"
 )
 
 // 设计目标 :
@@ -13,10 +14,11 @@ import (
 //			4. 使用reflect可以做到配置完main.cfg和增加一个表元素对应的结构(flag是标题)以及一个 map表, 外加get文件, 可以顺利使用配置, load函数做到通用(reflect技术)
 
 type ScreenConfig struct {
-	Name    string
-	ModName string
-	Width   int32
-	Height  int32
+	Id      int32  `csv:"编号"`
+	Name    string `csv:"场景名称"`
+	ModName string `csv:"Lua模块名"`
+	Width   int32  `csv:"宽"`
+	Height  int32  `csv:"高"`
 }
 
 type ScreensConfig struct {
@@ -26,7 +28,7 @@ type ScreensConfig struct {
 var GScreens ScreensConfig
 
 func init() {
-	GScreens.LoadScreenConfig("./data/screens/screen_list.txt")
+	GScreens.LoadScreenConfig("./data/config/screen_list.txt")
 }
 
 func (this *ScreensConfig) LoadScreenConfig(name string) bool {
@@ -38,23 +40,16 @@ func (this *ScreensConfig) LoadScreenConfig(name string) bool {
 	}
 	defer f.Close()
 
-	r := csv.NewReader(f)
-	r.Comma = '\t'
-	r.TrimLeadingSpace = true
-
-	d, err2 := r.ReadAll()
+	d, err2 := ioutil.ReadAll(f)
 	if err2 != nil {
 		println(err2.Error())
 	} else {
 		this.config = make(map[int32]*ScreenConfig)
-		for i, _ := range d {
-			if i > 0 {
-				id, _ := strconv.Atoi(d[i][0])
-				w, _ := strconv.Atoi(d[i][3])
-				h, _ := strconv.Atoi(d[i][4])
-				this.config[int32(id)] = &ScreenConfig{Name: d[i][1], ModName: d[i][2], Width: int32(w), Height: int32(h)}
-			}
-		}
+
+		pp := make([]ScreenConfig, 0)
+		csv.Unmarshal('\t', true, d, &pp)
+
+		fmt.Println(pp)
 	}
 	return true
 }
