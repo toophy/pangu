@@ -2,6 +2,7 @@ package exm
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -26,44 +27,57 @@ type Humen struct {
 // 测试interface
 func RelectInterface(t *testing.T) {
 	y := make([]Humen, 3)
-	CallInterface(y)
+	CallInterface(&y)
 
+}
+
+// checkForSlice validates that the interface is a slice type
+func checkForSlice(v interface{}) (reflect.Value, error) {
+	pv := reflect.ValueOf(v)
+
+	if pv.Kind() != reflect.Ptr || pv.IsNil() {
+		return pv, errors.New("type is nil or not a pointer")
+	}
+
+	rv := reflect.ValueOf(v).Elem()
+
+	if rv.Kind() != reflect.Slice {
+		return rv, fmt.Errorf("only slices are allowed: %s", rv.Kind())
+	}
+
+	return rv, nil
 }
 
 func CallInterface(v interface{}) {
 
-	t := reflect.TypeOf(v)
-	if t.Kind() == reflect.Slice {
-		vx := reflect.ValueOf(v)
-		l := vx.Len()
-		for i := 0; i < l; i++ {
-			vs := vx.Index(i).Pointer()
-			vx.Index(i).
-
-			// ts := reflect.TypeOf(vs)
-			// rl := ts.NumField()
-			// for k := 0; k < rl; k++ {
-			// 	x := ts.Field(k)
-			// 	fmt.Printf("%-v\n", x)
-			// }
-
-			if reflect.ValueOf(vs).Kind() == reflect.Ptr {
-				fmt.Println("ptr")
-				reflect.ValueOf(vs).Elem().FieldByName("Name").SetString("gogo")
-			} else {
-				fmt.Println(reflect.ValueOf(vs).Kind())
-			}
-
-			//fmt.Println(reflect.ValueOf(vs).Elem().CanSet())
-		}
-	} else {
-		rl := t.NumField()
-		for i := 0; i < rl; i++ {
-			x := t.Field(i)
-			fmt.Printf("%-v\n", x)
-		}
+	rv, err := checkForSlice(v)
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 
+	t := reflect.TypeOf(rv)
+
+	vx := reflect.ValueOf(rv)
+	l := vx.Len()
+	for i := 0; i < l; i++ {
+		vs := vx.Index(i).Pointer()
+
+		// ts := reflect.TypeOf(vs)
+		// rl := ts.NumField()
+		// for k := 0; k < rl; k++ {
+		// 	x := ts.Field(k)
+		// 	fmt.Printf("%-v\n", x)
+		// }
+
+		if reflect.ValueOf(vs).Kind() == reflect.Ptr {
+			fmt.Println("ptr")
+			reflect.ValueOf(vs).Elem().FieldByName("Name").SetString("gogo")
+		} else {
+			fmt.Println(reflect.ValueOf(vs).Kind())
+		}
+
+		//fmt.Println(reflect.ValueOf(vs).Elem().CanSet())
+	}
 }
 
 // reflect

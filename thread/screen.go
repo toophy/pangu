@@ -25,7 +25,7 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 		return false
 	}
 	this.InitEventHeader()
-	cfg := config.GScreens.GetScreenConfig(oid)
+	cfg := config.GConfig.GetScreen(oid)
 	if cfg == nil {
 		t.LogError("场景%s加载失败: 没有找到场景模板(%d)", name, oid)
 		return false
@@ -88,7 +88,7 @@ func (this *Screen) Get_oid() int32 {
 
 // !!! 获取的指针不能保存, 获取场景配置
 func (this *Screen) Get_config() *config.ScreenConfig {
-	return config.GScreens.GetScreenConfig(this.Oid)
+	return config.GConfig.GetScreen(this.Oid)
 }
 
 // 获取所在线程
