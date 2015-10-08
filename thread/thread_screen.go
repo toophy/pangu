@@ -3,6 +3,7 @@ package thread
 import (
 	"errors"
 	lua "github.com/toophy/gopher-lua"
+	"github.com/toophy/pangu/help"
 )
 
 // 场景容器
@@ -12,10 +13,11 @@ type ScreenMap map[int32]*Screen
 type ScreenThread struct {
 	Thread
 
-	lastScreenId int32       // 最后一个场景id
-	screens      ScreenMap   // screen 列表
-	luaState     *lua.LState // Lua实体
-	luaNilTable  lua.LTable  // Lua空的Table, 供默认参数使用
+	lastScreenId int32          // 最后一个场景id
+	screens      ScreenMap      // screen 列表
+	luaState     *lua.LState    // Lua实体
+	luaNilTable  lua.LTable     // Lua空的Table, 供默认参数使用
+	move_Actors  help.DListNode // 移动中的角色
 }
 
 // 新建场景线程
@@ -37,6 +39,10 @@ func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time i
 	if err == nil {
 		this.screens = make(ScreenMap, 0)
 		this.lastScreenId = (id - 1) * 1000000
+
+		// 移动中角色, 节点初始化
+		this.move_Actors.Init(nil)
+		this.move_Actors.SrcTid = this.id
 		return nil
 	}
 	return err
@@ -140,4 +146,14 @@ func (this *ScreenThread) PostEventFromLua(m string, f string, t uint64, p lua.L
 	evt.function = f
 	evt.param = p
 	return this.PostEvent(evt)
+}
+
+// 新增移动中的角色
+func (this *ScreenThread) AddMoveActor(n *help.DListNode) {
+	old_pre := this.move_Actors.Pre
+
+	this.move_Actors.Pre = n
+	n.Next = &this.move_Actors
+	n.Pre = old_pre
+	old_pre.Next = n
 }

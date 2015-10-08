@@ -1,8 +1,6 @@
-package actor
+package thread
 
-import (
-//"fmt"
-)
+import ()
 
 const (
 	Exatr_Null = iota
@@ -11,6 +9,7 @@ const (
 	Exatr_Str
 	Exatr_Agi
 	Exatr_Ene
+	Exatr_Speed
 	Exatr_Last
 )
 

@@ -1,7 +1,7 @@
-package actor
+package thread
 
 import (
-//"fmt"
+	"github.com/toophy/pangu/help"
 )
 
 const (
@@ -17,6 +17,7 @@ const (
 
 const (
 	Amdl_BaseAtr = iota
+	Amdl_Move
 	Amdl_ExAtr
 	Amdl_Last
 )
@@ -25,9 +26,11 @@ const (
 // usage :
 // a := Actor{}
 type Actor struct {
-	Mdls map[int32]interface{}
-	Id   int64
-	Type int32
+	Mdls      map[int32]interface{}
+	Id        int64
+	Type      int32
+	MoveNode  help.DListNode // 计算"移动"的节点
+	CurScreen *Screen        // 当前所在场景
 }
 
 // 演员初始化
@@ -41,6 +44,7 @@ func (a *Actor) Init(t int32, id int64) bool {
 	a.Type = t
 	a.Id = id
 	a.Mdls = make(map[int32]interface{}, 0)
+	a.MoveNode.Init(a)
 	return true
 }
 
