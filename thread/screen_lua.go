@@ -87,3 +87,13 @@ func regLua_screen(struct_name string, L *lua.LState) error {
 
 	return nil
 }
+
+// 定制lua脚本
+// 禁止以下功能
+// dofile
+// require
+// load
+// loadfile
+// loadstring
+// Copyright © 2013-2015 Galvanized Logic Inc.
+// Use is governed by a BSD-style license found in the LICENSE file.

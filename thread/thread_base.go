@@ -48,6 +48,10 @@ const (
 	Evt_lay1_time = 160000 // 第一层事件池最大支持时间(毫秒)
 )
 
+const (
+	UpdateCurrTimeCount = 32 // 刷新时间戳变更上线
+)
+
 // 线程接口
 type IThread interface {
 	Init_thread(IThread, int32, string, int64, uint64) error // 初始化线程
@@ -75,33 +79,35 @@ type IThread interface {
 
 // 线程基本功能
 type Thread struct {
-	id               int32                      // Id号
-	name             string                     // 线程名称
-	heart_time       int64                      // 心跳时间(毫秒)
-	start_time       int64                      // 线程开启时间戳
-	last_time        int64                      // 最近一次线程运行时间戳
-	heart_rate       float64                    // 本次心跳比率
-	pre_stop         bool                       // 预备停止
-	self             IThread                    // 自己, 初始化之后, 不要操作
-	first_run        bool                       // 线程首次运行
-	evt_lay1         []help.DListNode           // 第一层事件池
-	evt_lay2         map[uint64]*help.DListNode // 第二层事件池
-	evt_names        map[string]help.IEvent     // 别名
-	evt_lay1Size     uint64                     // 第一层池容量
-	evt_lay1Cursor   uint64                     // 第一层游标
-	evt_lastRunCount uint64                     // 最近一次运行次数
-	evt_currRunCount uint64                     // 当前运行次数
-	evt_threadMsg    [Tid_last]*help.DListNode  // 保存将要发给其他线程的事件(消息)
-	node_pool        []help.DListNode           // 节点池
-	node_free        help.DListNode             // 自由节点
-	node_preFree     [Tid_last]*help.DListNode  // 预备释放的节点(其他线程释放)
-	node_alloc_count int                        // 节点分配数量
-	log_Buffer       []byte                     // 线程日志缓冲
-	log_BufferLen    int                        // 线程日志缓冲长度
-	log_TimeString   string                     // 时间格式(精确到秒2015.08.13 16:33:00)
-	log_Header       [LogMaxLevel]string        // 各级别日志头
-	log_FileBuff     bytes.Buffer               // 日志总缓冲, Tid_world才会使用
-	log_FileHandle   *os.File                   // 日志文件, Tid_world才会使用
+	id                  int32                      // Id号
+	name                string                     // 线程名称
+	heart_time          int64                      // 心跳时间(毫秒)
+	start_time          int64                      // 线程开启时间戳
+	last_time           int64                      // 最近一次线程运行时间戳
+	curr_time           int64                      // 当前时间戳(毫秒)
+	get_curr_time_count int64                      // 索取当前时间戳次数
+	heart_rate          float64                    // 本次心跳比率
+	pre_stop            bool                       // 预备停止
+	self                IThread                    // 自己, 初始化之后, 不要操作
+	first_run           bool                       // 线程首次运行
+	evt_lay1            []help.DListNode           // 第一层事件池
+	evt_lay2            map[uint64]*help.DListNode // 第二层事件池
+	evt_names           map[string]help.IEvent     // 别名
+	evt_lay1Size        uint64                     // 第一层池容量
+	evt_lay1Cursor      uint64                     // 第一层游标
+	evt_lastRunCount    uint64                     // 最近一次运行次数
+	evt_currRunCount    uint64                     // 当前运行次数
+	evt_threadMsg       [Tid_last]*help.DListNode  // 保存将要发给其他线程的事件(消息)
+	node_pool           []help.DListNode           // 节点池
+	node_free           help.DListNode             // 自由节点
+	node_preFree        [Tid_last]*help.DListNode  // 预备释放的节点(其他线程释放)
+	node_alloc_count    int                        // 节点分配数量
+	log_Buffer          []byte                     // 线程日志缓冲
+	log_BufferLen       int                        // 线程日志缓冲长度
+	log_TimeString      string                     // 时间格式(精确到秒2015.08.13 16:33:00)
+	log_Header          [LogMaxLevel]string        // 各级别日志头
+	log_FileBuff        bytes.Buffer               // 日志总缓冲, Tid_world才会使用
+	log_FileHandle      *os.File                   // 日志文件, Tid_world才会使用
 }
 
 // 初始化线程(必须调用)
@@ -127,6 +133,11 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 	this.heart_time = heart_time * int64(time.Millisecond)
 	this.start_time = time.Now().UnixNano()
 	this.last_time = this.start_time
+
+	// 设置当前时间戳(毫秒)
+	this.get_curr_time_count = 1
+	this.curr_time = this.last_time / int64(time.Millisecond)
+
 	this.heart_rate = 1.0
 	this.self = self
 	this.first_run = true
@@ -231,6 +242,10 @@ func (this *Thread) Run_thread() {
 			this.MakeLogHeader()
 
 			this.last_time = time.Now().UnixNano()
+			// 设置当前时间戳(毫秒)
+			this.get_curr_time_count = 1
+			this.curr_time = this.last_time / int64(time.Millisecond)
+
 			this.runThreadMsg()
 			this.runEvents()
 			this.self.on_run()
@@ -673,4 +688,15 @@ func (this *Thread) sendThreadFreeNode() {
 			this.PostThreadMsg(i, evt)
 		}
 	}
+}
+
+// 获取当前时间戳(毫秒)
+func (this *Thread) GetCurrTime() int64 {
+	this.get_curr_time_count++
+	if this.get_curr_time_count > UpdateCurrTimeCount {
+		this.get_curr_time_count = 1
+		this.curr_time = time.Now().UnixNano() / int64(time.Millisecond)
+	}
+
+	return this.curr_time
 }

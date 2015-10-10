@@ -16,9 +16,7 @@ const (
 )
 
 const (
-	Amdl_BaseAtr = iota
-	Amdl_Move
-	Amdl_ExAtr
+	Amdl_ExAtr = iota
 	Amdl_Last
 )
 
@@ -26,36 +24,34 @@ const (
 // usage :
 // a := Actor{}
 type Actor struct {
-	Mdls      map[int32]interface{}
-	Id        int64
-	Type      int32
-	MoveNode  help.DListNode // 计算"移动"的节点
-	CurScreen *Screen        // 当前所在场景
+	Mdls         map[int32]interface{} // 模块
+	Id           int64                 // 角色编号
+	Type         int32                 // 角色类型
+	Name         string                // 名称
+	CurScreen    *Screen               // 当前所在场景
+	MoveNode     help.DListNode        // Move : 计算"移动"的节点
+	CurrPos      help.Vec3             // Move : 当前位置
+	TargetPos    help.Vec3             // Move : 目标位置
+	LastMoveTime int64                 // Move : 最后移动时间戳(单位: 毫秒)
 }
 
 // 演员初始化
 // usage :
 // a := Actor{}
 // a.Init(Atype_player)
-func (a *Actor) Init(t int32, id int64) bool {
+func (a *Actor) Init(t int32, id int64, name string, pos help.Vec3, s *Screen) bool {
 	if t <= Atype_null || t >= Atype_last {
 		return false
 	}
 	a.Type = t
 	a.Id = id
 	a.Mdls = make(map[int32]interface{}, 0)
+	a.Name = name
+	a.CurScreen = s
+	a.CurrPos = pos
 	a.MoveNode.Init(a)
+	a.LastMoveTime = a.CurScreen.Get_thread().GetCurrTime()
 	return true
-}
-
-// 获取Id
-func (a *Actor) GetId() int64 {
-	return a.Id
-}
-
-// 获取类型
-func (a *Actor) GetType() int32 {
-	return a.Type
 }
 
 // 增加演员功能模块
@@ -68,8 +64,6 @@ func (a *Actor) Mdl_add(m interface{}) bool {
 	id := int32(Amdl_Last)
 
 	switch m.(type) {
-	case *BaseAtr:
-		id = Amdl_BaseAtr
 	case *ExAtr:
 		id = Amdl_ExAtr
 	}
