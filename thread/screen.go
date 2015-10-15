@@ -3,7 +3,6 @@ package thread
 import (
 	"fmt"
 	lua "github.com/toophy/gopher-lua"
-	"github.com/toophy/pangu/actor"
 	"github.com/toophy/pangu/config"
 	"github.com/toophy/pangu/help"
 )
@@ -14,7 +13,7 @@ type Screen struct {
 	ModName string
 	Id      int32
 	Oid     int32
-	Actors  map[int64]*actor.Actor
+	Actors  map[int64]*Actor
 	luaData lua.LValue
 	thread  *ScreenThread
 }
@@ -41,7 +40,7 @@ func (this *Screen) Load(name string, id int32, oid int32, t *ScreenThread) bool
 
 	this.Id = id
 	this.Oid = oid
-	this.Actors = make(map[int64]*actor.Actor, 0)
+	this.Actors = make(map[int64]*Actor, 0)
 	this.thread = t
 	this.luaData = this.thread.GetLuaState().NewTable()
 	t.LogInfo("场景%s加载成功", this.Name)
@@ -111,9 +110,9 @@ func (this *Screen) PostEvent(f string, t uint64, p lua.LValue) bool {
 }
 
 // 登录地图
-func (this *Screen) Actor_enter(a *actor.Actor) bool {
-	if _, ok := this.Actors[a.GetId()]; ok {
-		this.Actors[a.GetId()] = a
+func (this *Screen) Actor_enter(a *Actor) bool {
+	if _, ok := this.Actors[a.Base_getId()]; ok {
+		this.Actors[a.Base_getId()] = a
 		return true
 	}
 	return false

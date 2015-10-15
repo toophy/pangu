@@ -44,12 +44,12 @@ func (t *Vec3) Mult(v *Vec3) {
 }
 
 // 缩放
-func (t *Vec3) Scale(s float64) {
+func (t *Vec3) Scale(s float32) {
 	t.X, t.Y, t.Z = t.X*s, t.Y*s, t.Z*s
 }
 
 // 逆缩放
-func (t *Vec3) Div(s float64) {
+func (t *Vec3) Div(s float32) {
 	if s != 0 {
 		inv := 1 / s
 		t.X, t.Y, t.Z = t.X*inv, t.Y*inv, t.Z*inv
@@ -58,7 +58,7 @@ func (t *Vec3) Div(s float64) {
 
 // 点积
 func (t *Vec3) Dot(v *Vec3) float64 {
-	return t.X*v.X + t.Y*v.Y + t.Z*v.Z
+	return float64(t.X*v.X + t.Y*v.Y + t.Z*v.Z)
 }
 
 // 这个点到原点的距离
@@ -72,14 +72,14 @@ func (t *Vec3) LenSqr() float64 {
 }
 
 // 两点距离
-func (t *Vec3) Dist(v *Vec3) float32 {
+func (t *Vec3) Dist(v *Vec3) float64 {
 	return math.Sqrt(t.DistSqr(v))
 }
 
 // 两点距离的平方
-func (t *Vec3) DistSqr(v *Vec3) float32 {
+func (t *Vec3) DistSqr(v *Vec3) float64 {
 	x, y, z := v.X-t.X, v.Y-t.Y, v.Z-t.Z
-	return x*x + y*y + z*z
+	return float64(x*x + y*y + z*z)
 }
 
 // 求角度

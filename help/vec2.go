@@ -2,10 +2,7 @@ package help
 
 // Vector performs 3 or 4 element vector related math needed for 3D applications.
 
-import (
-	"log"
-	"math"
-)
+import ()
 
 // V3 is a 3 element vector. This can also be used as a point.
 type V3 struct {
@@ -14,6 +11,7 @@ type V3 struct {
 	Z float64 // increments as Z moves out of the screen (right handed view space).
 }
 
+/*
 // Eq (==) returns true if each element in the vector v has the same value
 // as the corresponding element in vector a.
 func (v *V3) Eq(a *V3) bool {
@@ -344,3 +342,4 @@ func NewV3() *V3 { return &V3{} }
 
 // NewV3S creates a new 3D vector using the given scalars.
 func NewV3S(x, y, z float64) *V3 { return &V3{x, y, z} }
+*/

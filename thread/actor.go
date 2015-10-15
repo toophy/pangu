@@ -54,7 +54,7 @@ func (a *Actor) Init(t int32, id int64, name string, pos help.Vec3, s *Screen) b
 	a.Mdls = make(map[int32]interface{}, 0)
 	a.Name = name
 	a.CurScreen = s
-	a.CurrPos = pos
+	a.CurPos = pos
 	a.MoveNode.Init(a)
 	a.LastMoveTime = a.CurScreen.Get_thread().GetCurrTime()
 	return true
