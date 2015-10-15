@@ -24,15 +24,21 @@ const (
 // usage :
 // a := Actor{}
 type Actor struct {
-	Mdls         map[int32]interface{} // 模块
-	Id           int64                 // 角色编号
-	Type         int32                 // 角色类型
-	Name         string                // 名称
-	CurScreen    *Screen               // 当前所在场景
-	MoveNode     help.DListNode        // Move : 计算"移动"的节点
-	CurrPos      help.Vec3             // Move : 当前位置
-	TargetPos    help.Vec3             // Move : 目标位置
-	LastMoveTime int64                 // Move : 最后移动时间戳(单位: 毫秒)
+	Mdls      map[int32]interface{} // 模块
+	Id        int64                 // 角色编号
+	Type      int32                 // 角色类型
+	Name      string                // 名称
+	CurScreen *Screen               // 当前所在场景
+
+	MoveNode     help.DListNode // Move : 计算"移动"的节点
+	CurPos       help.Vec3      // Move : 当前位置
+	SrcPos       help.Vec3      // Move : 移动开始位置
+	DstPos       help.Vec3      // Move : 移动目标位置
+	MoveRate     help.Vec3      // Move : 移动系数 (x3-x1)/s, (y3-y1)/s, (z3-z1)/s
+	MoveSpeed    float32        // Move : 移动速度
+	MoveMinLen   float32        // Move : 最小容忍距离(小于这个值会立即移动)
+	MoveLen      float32        // Move : 移动总长度
+	LastMoveTime int64          // Move : 最后移动时间戳(单位: 毫秒)
 }
 
 // 演员初始化

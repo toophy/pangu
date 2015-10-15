@@ -60,6 +60,7 @@ type IThread interface {
 	Get_thread_name() string                                 // 获取线程名称
 	pre_close_thread()                                       // -- 只允许thread调用 : 预备关闭线程
 	on_first_run()                                           // -- 只允许thread调用 : 首次运行(在 on_run 前面)
+	on_pre_run()                                             // -- 只允许thread调用 : 线程最先运行部分
 	on_run()                                                 // -- 只允许thread调用 : 线程运行部分
 	on_end()                                                 // -- 只允许thread调用 : 线程结束回调
 
@@ -245,6 +246,8 @@ func (this *Thread) Run_thread() {
 			// 设置当前时间戳(毫秒)
 			this.get_curr_time_count = 1
 			this.curr_time = this.last_time / int64(time.Millisecond)
+
+			this.self.on_pre_run()
 
 			this.runThreadMsg()
 			this.runEvents()

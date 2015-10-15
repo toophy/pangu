@@ -118,6 +118,15 @@ func (this *WorldThread) on_first_run() {
 	this.Tolua_Common("main", "OnWorldBegin")
 }
 
+// 响应线程最先运行
+func (this *WorldThread) on_pre_run() {
+	// 处理各种最先处理的问题
+}
+
+// 响应线程运行
+func (this *WorldThread) on_run() {
+}
+
 // 响应线程退出
 func (this *WorldThread) on_end() {
 	this.Tolua_Common("main", "OnWorldEnd")
@@ -125,10 +134,6 @@ func (this *WorldThread) on_end() {
 		this.luaState.Close()
 		this.luaState = nil
 	}
-}
-
-// 响应线程运行
-func (this *WorldThread) on_run() {
 }
 
 // 初始化LuaState, 可以用来 Reload LuaState

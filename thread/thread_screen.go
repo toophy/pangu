@@ -92,6 +92,29 @@ func (this *ScreenThread) on_first_run() {
 	this.Tolua_Common("main", "OnScreenThreadBegin")
 }
 
+// 响应线程最先运行
+func (this *ScreenThread) on_pre_run() {
+	// 处理各种最先处理的问题
+	// 1.Actor移动
+	// this.move_Actors
+	// 当前要处理的节点, 不是头节点, 就可以运行
+	n := this.move_Actors.Next
+	h := &this.move_Actors
+
+	for n != h {
+		m := n
+		n = n.Next
+
+		if !m.Data.(*Actor).Base_onMove() {
+			m.Pre.Pop()
+		}
+	}
+}
+
+// 响应线程运行
+func (this *ScreenThread) on_run() {
+}
+
 // 响应线程退出
 func (this *ScreenThread) on_end() {
 	this.Tolua_Common("main", "OnScreenThreadEnd")
@@ -99,10 +122,6 @@ func (this *ScreenThread) on_end() {
 		this.luaState.Close()
 		this.luaState = nil
 	}
-}
-
-// 响应线程运行
-func (this *ScreenThread) on_run() {
 }
 
 // 初始化LuaState, 可以用来 Reload LuaState
