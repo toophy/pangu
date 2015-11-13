@@ -1,6 +1,6 @@
 package thread
 
-import (
+/*import (
 	"errors"
 	lua "github.com/toophy/gopher-lua"
 	"github.com/toophy/pangu/help"
@@ -100,3 +100,4 @@ func (this *NetThread) on_run() {
 // 响应线程退出
 func (this *NetThread) on_end() {
 }
+*/

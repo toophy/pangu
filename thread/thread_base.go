@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/toophy/pangu/help"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -211,6 +212,9 @@ func (this *Thread) Run_thread() {
 	// 处理线程间接收消息, 分配到水表定时器
 	// 执行水表定时器
 	go func() {
+
+		runtime.LockOSThread()
+
 		GetWorld().Add_run_thread(this.self)
 
 		this.start_time = time.Now().UnixNano()
@@ -276,6 +280,8 @@ func (this *Thread) Run_thread() {
 		}
 
 		GetWorld().Release_run_thread(this.self)
+
+		runtime.UnlockOSThread()
 	}()
 }
 
@@ -438,7 +444,7 @@ func (this *Thread) runThreadMsg() {
 	}
 }
 
-// 发送消息间消息
+// 发送线程间消息
 func (this *Thread) sendThreadMsg() {
 
 	// 发送日志到日志线程

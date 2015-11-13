@@ -6,8 +6,13 @@ import (
 	"github.com/toophy/pangu/help"
 	"github.com/toophy/pangu/thread"
 	"os"
+	"runtime"
 	"runtime/pprof"
 )
+
+// func init() {
+// 	runtime.LockOSThread()
+// }
 
 // Gogame framework version.
 const (
@@ -15,6 +20,9 @@ const (
 )
 
 func main() {
+
+	runtime.GOMAXPROCS(4)
+
 	// 检查log目录
 	if !help.IsExist(thread.LogDir) {
 		os.MkdirAll(thread.LogDir, os.ModeDir)

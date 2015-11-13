@@ -1,5 +1,10 @@
 package thread
 
+/*
+#include "thread_sys.h"
+*/
+import "C"
+
 import (
 	"errors"
 	lua "github.com/toophy/gopher-lua"
